@@ -9,12 +9,25 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/gorilla/websocket"
 )
 
 type Page struct {
 	Title string
 	Body  []byte
 }
+
+type Message struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Title    string `json:"title"`
+	Body     string `json:"body"`
+}
+
+var clients = make(map[*websocket.Conn]bool)
+var broadcast = make(chan Message)
+var upgrader = websocket.Upgrader{}
 
 var templates = template.Must(template.ParseFiles("edit.html", "view.html", "main.html", "notfound.html"))
 var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-0-9]+)$")
@@ -136,11 +149,55 @@ func faviconHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "favicon.ico")
 }
 
+func handleConnections(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ws.Close()
+
+	clients[ws] = true
+
+	for {
+		var msg Message
+
+		err := ws.ReadJSON((&msg))
+		if err != nil {
+			log.Printf("error: %v", err)
+			delete(clients, ws)
+			break
+		}
+
+		broadcast <- msg
+	}
+}
+
+func handleMessages() {
+	for {
+		msg := <-broadcast
+		log.Printf("received message: %v", msg)
+
+		for client := range clients {
+			err := client.WriteJSON(msg)
+			if err != nil {
+				log.Printf("error: %v", err)
+				client.Close()
+				delete(clients, client)
+			}
+		}
+	}
+}
+
 func main() {
+	http.HandleFunc("/favicon.ico", faviconHandler)
+
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
-	http.HandleFunc("/favicon.ico", faviconHandler)
 	http.HandleFunc("/", mainPageHandler)
+
+	http.HandleFunc("/ws", handleConnections)
+	go handleMessages()
+
 	log.Fatal(http.ListenAndServe(":4000", nil))
 }
