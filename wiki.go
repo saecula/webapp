@@ -132,10 +132,15 @@ func renderTemplateFromStrSlice(w http.ResponseWriter, tmpl string, l []string) 
 	}
 }
 
+func faviconHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "favicon.ico")
+}
+
 func main() {
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
+	http.HandleFunc("/favicon.ico", faviconHandler)
 	http.HandleFunc("/", mainPageHandler)
 	log.Fatal(http.ListenAndServe(":4000", nil))
 }
