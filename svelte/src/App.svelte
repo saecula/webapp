@@ -1,16 +1,5 @@
 <script>
 	import { onMount, onDestroy } from "svelte";
-	// import io from "socket.io-client";
-
-	const socket = new WebSocket("ws://localhost:4000/ws");
-	socket.addEventListener("open", function (event) {
-		console.log("omg opened! what is event:", event);
-	});
-	socket.addEventListener("message", function ({ data }) {
-		console.log("omg NEWWW incoming message:", data);
-		const message = JSON.parse(data);
-		messages = [...messages, message];
-	});
 
 	let messages = [];
 	let message = {
@@ -18,84 +7,106 @@
 		body: "",
 	};
 
+	const socket = new WebSocket("ws://localhost:4000/ws");
+	socket.addEventListener("message", function ({ data }) {
+		const message = JSON.parse(data);
+		messages = [message, ...messages];
+	});
+
 	const fetchMain = async () => {
 		const response = await fetch(`http://localhost:4000/`);
-		console.log("response...", response);
-		const parsed = await response.json();
-		console.log("parsed", parsed);
-		return parsed;
+		const parsedResponse = await response.json();
+		return parsedResponse;
 	};
 
 	onMount(async () => {
 		const prevMessages = await fetchMain();
-		console.log("ooo", prevMessages);
 		messages = prevMessages;
 	});
 
-	onDestroy(() => {
-		socket.disconnect();
-	});
-
 	const sendMessage = () => {
-		console.log("wutttt", message);
 		if (message.body) {
 			socket.send(JSON.stringify(message));
 		}
 	};
+
+	onDestroy(() => {
+		socket.disconnect();
+	});
 </script>
 
 <style>
-	main {
-		text-align: center;
-		padding: 1em;
-		max-width: 240px;
-		margin: 0 auto;
-	}
-
 	h1 {
 		color: #ff3e00;
-		text-transform: uppercase;
 		font-size: 4em;
 		font-weight: 100;
 	}
+	h2 {
+		color: #00a17e;
+		font-size: 2em;
+		font-weight: 100;
+	}
+
+	.container {
+		display: flex;
+		flex-direction: column;
+		width: 80vw;
+		margin: auto;
+		text-align: center;
+	}
+	.message {
+		width: 400px;
+		margin: 10px auto;
+		border: none;
+		outline: white;
+	}
+
+	::placeholder {
+		color: rgb(195, 195, 195);
+		font-weight: 180;
+	}
+	#submit {
+		height: 64px;
+		color: #6d6d6d;
+		background-color: #8affe6;
+	}
+
+	.post {
+		list-style: none;
+		color: rgb(80, 80, 80);
+		margin: 20px auto;
+		width: 200px;
+		overflow: auto;
+		padding: 50px;
+		border-radius: 50%;
+	}
 </style>
 
-<h1>its a webapp</h1>
-<h2>write a message!!!!omg</h2>
+<div class="container">
+	<h1>its a webapp</h1>
+	<h2>write me a message!!!!1omg pls</h2>
 
-<div class="form-group">
 	<input
-		class="form-control"
-		placeholder="TITLE"
-		id="body"
+		placeholder="title here (if you want)"
+		id="title"
+		class="message"
 		bind:value={message.title} />
 	<input
-		class="form-control"
-		placeholder="you know you want to"
+		placeholder="you know you want to send me something"
 		id="body"
+		class="message input"
 		bind:value={message.body} />
-</div>
 
-<button type="button" on:click={sendMessage}> send ur message </button>
+	<button class="message" id="submit" type="button" on:click={sendMessage}>
+		send ur message
+	</button>
 
-<ul class="list-group">
-	{#each messages as msg}
-		<li class="list-group-item">
-			<div><strong>{msg.title}</strong></div>
-			<div>{msg.body}</div>
-		</li>
-	{/each}
-</ul>
-<!-- {#await fetchMain}
-	<h1>loading...</h1>
-{:then data}
-	<main>
-		<h1>hello!</h1>
-		{#each data as title}
-			<h2>{title}</h2>
+	<ul class="posts">
+		{#each messages as msg}
+			<li class="post">
+				<div><strong>{msg.title}</strong></div>
+				<div>{msg.body}</div>
+			</li>
 		{/each}
-		<p>this is a much nicer frontend!</p>
-	</main>
-{:catch error}
-	<p>ohnoes!! {error}</p>
-{/await} -->
+	</ul>
+</div>
