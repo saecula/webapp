@@ -144,7 +144,7 @@
 		class="message"
 		bind:value={message.title} />
 	<input
-		placeholder="you know you want to send me something"
+		placeholder="you know you want to"
 		id="body"
 		class="message input"
 		bind:value={message.body} />
