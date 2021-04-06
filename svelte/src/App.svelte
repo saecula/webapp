@@ -27,6 +27,10 @@
 	const sendMessage = () => {
 		if (message.body) {
 			socket.send(JSON.stringify(message));
+			message = {
+				title: "",
+				body: "",
+			};
 		}
 	};
 
@@ -53,6 +57,8 @@
 		width: 80vw;
 		margin: auto;
 		text-align: center;
+		background: url("sixpack.png") no-repeat bottom left;
+		background-size: 20vh;
 	}
 	.message {
 		width: 400px;
