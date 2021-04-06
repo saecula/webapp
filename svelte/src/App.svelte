@@ -1,5 +1,8 @@
 <script>
 	import { onMount, onDestroy } from "svelte";
+	const { HOST } = process.env;
+	const url = HOST === "localhost" ? "http://localhost" : HOST;
+	console.log("host:", HOST, url);
 	const uuidv4 = new RegExp(
 		/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
 	);
@@ -23,7 +26,7 @@
 	});
 
 	const initSocket = () => {
-		socket = new WebSocket("ws://localhost:4000/ws");
+		socket = new WebSocket(`ws://${HOST}:4000/ws`);
 		socket.addEventListener("message", function ({ data }) {
 			const message = JSON.parse(data);
 			message.title = unwrap(message.title);
@@ -32,7 +35,7 @@
 	};
 
 	const fetchMain = async () => {
-		const response = await fetch(`http://localhost:4000/`);
+		const response = await fetch(`${url}:4000/`);
 		const parsedResponse = await response.json();
 		return parsedResponse;
 	};
