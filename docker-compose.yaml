@@ -4,7 +4,11 @@ services:
     build:
       dockerfile: Dockerfile
       context: ./server
+    ports:
+      - "4000:4000"
   svelte:
     build:
       dockerfile: Dockerfile
       context: ./svelte
+    ports:
+      - "5000:5000"
