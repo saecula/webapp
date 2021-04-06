@@ -22,6 +22,12 @@ type Page struct {
 	Title    string `json:"title"`
 	Body     []byte `json:"body"`
 }
+type Message struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Title    string `json:"title"`
+	Body     string `json:"body"`
+}
 
 var GET = "GET"
 var POST = "POST"
@@ -29,7 +35,7 @@ var PUT = "PUT"
 var DELETE = "DELETE"
 
 var clients = make(map[*websocket.Conn]bool)
-var broadcast = make(chan Page)
+var broadcast = make(chan Message)
 var upgrader = websocket.Upgrader{}
 
 var templates = template.Must(template.ParseFiles("edit.html", "view.html", "main.html", "notfound.html"))
@@ -65,6 +71,16 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
+func loadPageAsMessage(title string) (*Message, error) {
+	filename := "pages/" + title + ".txt"
+	body, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	strBody := string(body)
+	return &Message{Title: title, Body: strBody}, nil
+}
+
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "http://localhost:5000")
 }
@@ -75,7 +91,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request, title string) {
 	switch r.Method {
 	case GET:
 		if title == "" {
-			serveTitles(w, r)
+			serveMessages(w, r)
 		} else {
 			servePage(w, r, title)
 		}
@@ -88,34 +104,35 @@ func mainHandler(w http.ResponseWriter, r *http.Request, title string) {
 	}
 }
 
-func serveTitles(w http.ResponseWriter, r *http.Request) {
+func serveMessages(w http.ResponseWriter, r *http.Request) {
 	files, err := ioutil.ReadDir("./pages")
 	if err != nil {
 		log.Fatal(err)
 	}
-	var titles []string
+	var messages []Message
 	for _, f := range files {
 		rawTitle := f.Name()
 		title := strings.TrimSuffix(rawTitle, filepath.Ext(rawTitle))
-		titles = append(titles, title)
+		m, err := loadPageAsMessage(title)
+		if err != nil {
+			panic(err)
+		}
+		messages = append(messages, *m)
 	}
-	f, err := json.Marshal(titles)
+	json, err := json.Marshal(messages)
 	if err != nil {
 		panic(err)
 	}
 	w.WriteHeader(201)
-	w.Write(f)
+	w.Write(json)
 	return
 }
 
 func servePage(w http.ResponseWriter, r *http.Request, t string) {
-	fmt.Println("here")
 	p, err := loadPage(t)
-	fmt.Println("we")
 	if err != nil {
 		p = &Page{Title: "new"}
 	}
-	fmt.Println("huh")
 	json, err := json.Marshal(p)
 	if err != nil {
 		panic(err)
@@ -164,8 +181,11 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 }
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("wut")
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		log.Println("nuuu")
 		log.Fatal(err)
 	}
 	defer ws.Close()
@@ -173,16 +193,18 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	clients[ws] = true
 
 	for {
-		var msg Page
+		var data Message
 
-		err := ws.ReadJSON((&msg))
+		err := ws.ReadJSON(&data)
+		log.Printf("omg maybe %v", data)
+
 		if err != nil {
-			log.Printf("error: %v", err)
+			log.Printf("error in handleConnections: %#v", err)
 			delete(clients, ws)
 			break
 		}
 
-		broadcast <- msg
+		broadcast <- data
 	}
 }
 
@@ -194,7 +216,7 @@ func handleMessages() {
 		for client := range clients {
 			err := client.WriteJSON(msg)
 			if err != nil {
-				log.Printf("error: %v", err)
+				log.Printf("error in handleMessages: %v", err)
 				client.Close()
 				delete(clients, client)
 			}
