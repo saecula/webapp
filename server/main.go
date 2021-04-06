@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -99,20 +98,7 @@ func saveMessageAsPost(msg Message) {
 }
 
 func enableCors(w *http.ResponseWriter) {
-	o := getOutboundIP().String()
-	(*w).Header().Set("Access-Control-Allow-Origin", o+":5000")
-}
-
-func getOutboundIP() net.IP {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	fmt.Printf("local addr: %v", localAddr.IP)
-	return localAddr.IP
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request, title string) {
