@@ -90,7 +90,7 @@ func saveMessageAsPost(msg Message) {
 	if msg.Title == "" {
 		pageTitle = uuid.NewString()
 	} else {
-		pageTitle = msg.Body
+		pageTitle = msg.Title
 	}
 
 	p := &Post{Title: pageTitle, Body: pageBody}

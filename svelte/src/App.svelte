@@ -3,6 +3,7 @@
 	const { HOST } = process.env;
 	const url = HOST === "localhost" ? "http://localhost" : HOST;
 	console.log("host:", HOST, url);
+
 	const uuidv4 = new RegExp(
 		/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
 	);
@@ -67,7 +68,7 @@
 	.credit {
 		color: #989898;
 		font-weight: 150;
-		font-size: 0.5rem;
+		font-size: 0.8rem;
 		margin-left: 83%;
 	}
 	h1 {
@@ -88,7 +89,7 @@
 		min-height: 100vh;
 		margin: auto;
 		text-align: center;
-		background: url("sixpack.png") no-repeat left calc(100vh - 231px);
+		background: url("/sixpack.png") no-repeat left calc(100vh - 231px);
 		background-size: 200px;
 	}
 	.message {
@@ -111,7 +112,8 @@
 
 	button:disabled,
 	button[disabled] {
-		color: #bbbbbb;
+		background-color: #a3ffeb;
+		color: #a9a9a9;
 	}
 
 	.posts {
@@ -127,7 +129,6 @@
 		width: 200px;
 		overflow: auto;
 		padding: 50px;
-		border-radius: 50%;
 	}
 </style>
 
