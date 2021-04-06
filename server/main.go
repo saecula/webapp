@@ -98,6 +98,11 @@ func saveMessageAsPost(msg Message) {
 }
 
 func enableCors(w *http.ResponseWriter) {
+	host := os.Getenv("HOST")
+	if host == "" {
+		host = "localhost"
+	}
+	fmt.Println("host: " + host)
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
