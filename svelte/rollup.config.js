@@ -7,9 +7,11 @@ import sveltePreprocess from "svelte-preprocess";
 import typescript from "@rollup/plugin-typescript";
 import replace from "@rollup/plugin-replace";
 import css from "rollup-plugin-css-only";
+import { config } from "dotenv";
 
+config();
 const production = !process.env.ROLLUP_WATCH;
-const HOST = process.env.HOST || "localhost";
+const API_HOST = process.env.API_HOST || "localhost";
 
 function serve() {
   let server;
@@ -47,7 +49,7 @@ export default {
   plugins: [
     replace({
       process: JSON.stringify({
-        env: { HOST },
+        env: { API_HOST },
       }),
     }),
     svelte({

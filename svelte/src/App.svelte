@@ -1,8 +1,8 @@
 <script>
 	import { onMount, onDestroy } from "svelte";
-	const { HOST } = process.env;
-	const url = HOST === "localhost" ? "http://localhost" : HOST;
-	console.log("host:", HOST, url);
+	const { API_HOST } = process.env;
+	const url = API_HOST === "localhost" ? "http://localhost" : API_HOST;
+	console.log("host:", API_HOST, url);
 
 	const uuidv4 = new RegExp(
 		/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
@@ -27,7 +27,7 @@
 	});
 
 	const initSocket = () => {
-		socket = new WebSocket(`ws://${HOST}:4000/ws`);
+		socket = new WebSocket(`ws://${API_HOST}:4000/ws`);
 		socket.addEventListener("message", function ({ data }) {
 			const message = JSON.parse(data);
 			message.title = unwrap(message.title);
