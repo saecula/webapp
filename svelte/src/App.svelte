@@ -36,7 +36,7 @@
 	};
 
 	const fetchMain = async () => {
-		const response = await fetch(`${url}:4000/`);
+		const response = await fetch(`http://${API_HOST}:4000`);
 		const parsedResponse = await response.json();
 		return parsedResponse;
 	};
