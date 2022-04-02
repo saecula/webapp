@@ -1,0 +1,58 @@
+.webapp {
+  text-align: center;
+}
+
+.webapp-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+#board-container {
+  width: 94vh;
+  height: 94vh;
+  display: flex;
+}
+
+#playing-area {
+  display: flex;
+  flex-wrap: wrap;
+  border: 2px solid yellow;
+  z-index: 2;
+}
+
+.playing-square {
+  width: 4.839%;
+  height: 4.839%;
+  margin: auto;
+  background-color: transparent;
+  border: 2px solid green;
+  z-index: 2;
+}
+
+#visible-board {
+  width: 90vh;
+  height: 90vh;
+  padding: 2px;
+  min-width: 350px;
+  min-height: 350px;
+  background-color: rgba(255, 149, 0, 0.371);
+  margin: 1.7%;
+  display: flex;
+  flex-wrap: wrap;
+  position:absolute;
+}
+
+.board-square {
+  width: 5%;
+  height: 5%;
+  margin: auto;
+  padding: 2px;
+  /* for now: */
+  background-color: transparent; 
+}
