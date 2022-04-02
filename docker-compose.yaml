@@ -9,6 +9,6 @@ services:
   svelte:
     build:
       dockerfile: Dockerfile
-      context: ./svelte
+      context: ./gogo
     ports:
-      - "5000:5000"
+      - "3000:3000"
