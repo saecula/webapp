@@ -18,11 +18,6 @@ const board = Array(19)
         state: BOARDSTATES.empty,
       }))
   );
-console.log(board);
-
-const visibleBoard = Array(18)
-  .fill(null)
-  .map(() => Array(18).fill(null));
 
 const Webapp = () => {
   useEffect(() => {
@@ -39,12 +34,19 @@ const Webapp = () => {
     }
   };
 
+  const [gameState, setGameState] = useState(board);
+
   const makePlayingSquare = (rowNum, colNum) => {
-    console.log("rownum", rowNum);
-    return <div id={`${rowNum}:${colNum}`} class={"playing-square"}></div>;
+    const key = rowNum + ":" + colNum;
+    return rowNum != 0 && colNum != 0 ? (
+      <div key={key} className="playing-square">
+        <div className="visible-square" />
+      </div>
+    ) : (
+      <div key={key} className="playing-square" />
+    );
   };
 
-  const [gameState, setGameState] = useState(board);
   return (
     <div className="webapp">
       <header className="webapp-header">
@@ -52,11 +54,6 @@ const Webapp = () => {
           <div id="playing-area">
             {board.map((rows, rowNum) =>
               rows.map((_, colNum) => makePlayingSquare(rowNum, colNum))
-            )}
-          </div>
-          <div id="visible-board">
-            {visibleBoard.map((r) =>
-              r.map((c) => <div className="board-square" />)
             )}
           </div>
         </div>

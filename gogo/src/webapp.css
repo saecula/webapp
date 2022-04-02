@@ -17,35 +17,23 @@
   width: 94vh;
   height: 94vh;
   display: flex;
+  background-color: rgb(255, 196, 0);
 }
 
 #playing-area {
   display: flex;
   flex-wrap: wrap;
-  border: 2px solid yellow;
+  border: 2px solid transparent;
   z-index: 2;
 }
 
 .playing-square {
-  width: 4.839%;
-  height: 4.839%;
+  width: 4.76%;
+  height: 4.76%;
   margin: auto;
   background-color: transparent;
-  border: 2px solid green;
+  border: 2px solid transparent;
   z-index: 2;
-}
-
-#visible-board {
-  width: 90vh;
-  height: 90vh;
-  padding: 2px;
-  min-width: 350px;
-  min-height: 350px;
-  background-color: rgba(255, 149, 0, 0.371);
-  margin: 1.7%;
-  display: flex;
-  flex-wrap: wrap;
-  position:absolute;
 }
 
 .board-square {
@@ -55,4 +43,12 @@
   padding: 2px;
   /* for now: */
   background-color: transparent; 
+}
+
+.visible-square {
+  height: 105%;
+    width: 105%;
+    position: relative;
+    border: 2px solid rgb(196, 125, 2);
+    margin: -64%;
 }

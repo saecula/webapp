@@ -243,6 +243,8 @@ func handleMessages() {
 }
 
 func main() {
+	log.SetFlags(0)
+	log.Printf("hello am running :3")
 	http.HandleFunc("/", makeHandler(mainHandler))
 
 	http.HandleFunc("/ws", handleConnections)
