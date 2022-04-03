@@ -36,13 +36,13 @@
   z-index: 5;
 }
 
-.black {
+.b {
   background-color: black;
   border-radius: 50%;
 
 }
 
-.white {
+.w {
   background-color: white;
   border-radius: 50%;
 }

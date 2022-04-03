@@ -2,27 +2,25 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./webapp.css";
 
-const BOARD_STATES = {
-  empty: "empty",
-  black: "black",
-  white: "white",
-};
-const STONE_COLORS = {
-  black: "black",
-  white: "white",
+const STATES = {
+  empty: "e",
+  black: "b",
+  white: "w",
 };
 
 const board = Array(19)
   .fill(null)
-  .map((_, rowNum) =>
-    Array(19)
-      .fill(rowNum)
-      .map((r, c) => ({
-        row: r,
-        col: c,
-        state: BOARD_STATES.empty,
-      }))
-  );
+  .map(() => Array(19).fill(null));
+
+const boardMap = {};
+board.forEach((row, i) => {
+  const rowKey = i.toString();
+  boardMap[rowKey] = {};
+  row.forEach((_, y) => {
+    const squareKey = y.toString();
+    boardMap[rowKey][squareKey] = STATES.empty;
+  });
+});
 
 const Webapp = () => {
   useEffect(() => {
@@ -39,42 +37,25 @@ const Webapp = () => {
     }
   };
 
-  const [stoneColor] = useState(STONE_COLORS.black);
-  const [gameState, setGameState] = useState(board);
+  const [stoneColor] = useState(STATES.black);
+  const [gameState, setGameState] = useState(boardMap);
 
   const setStone = (key) => {
-    const [cRow, cCol] = key.split(":").map((s) => parseInt(s));
-    console.log("current row and column:", cRow, cCol);
+    const [cRow, cCol] = key.split(":");
+    const prevSquareState = gameState[cRow][cCol];
+    const newGameState =
+      prevSquareState === STATES.empty
+        ? stoneColor
+        : prevSquareState == stoneColor
+        ? STATES.empty
+        : prevSquareState;
+
     setGameState((prevGameState) => {
-      const prevState = prevGameState && prevGameState[cRow][cCol].state;
-      console.log("prev state:", prevState);
-      const newthing = prevGameState.map((prevRow) =>
-        prevRow.map((sq) => {
-          console.log(
-            "trying to compare",
-            sq.row,
-            "to",
-            cRow,
-            "and",
-            sq.col,
-            "to",
-            cCol
-          );
-          if (sq.row === cRow && sq.col === cCol) {
-            console.log("FOUND");
-            return {
-              ...sq,
-              state:
-                prevState === BOARD_STATES.empty
-                  ? stoneColor
-                  : BOARD_STATES.empty,
-            };
-          } else {
-            return { ...sq };
-          }
-        })
-      );
-      console.log("hm", newthing);
+      const newthing = {
+        ...prevGameState,
+        [cRow]: { ...prevGameState[cRow], [cCol]: newGameState },
+      };
+      console.log("newthing", newthing);
       return newthing;
     });
   };
@@ -85,11 +66,8 @@ const Webapp = () => {
       <div
         key={key}
         id={key}
-        className={`playing-square ${
-          gameState && gameState[rowNum] && gameState[rowNum][colNum]?.state
-        }`}
+        className={`playing-square ${gameState[rowNum][colNum]}`}
         onClick={() => {
-          console.log("hello", key);
           setStone(key);
         }}
       >
@@ -104,7 +82,7 @@ const Webapp = () => {
         <div id="board-container">
           <div id="playing-area">
             {board.map((rows, y) =>
-              rows.map((_, x) => makePlayingSquare(y, x))
+              rows.map((_, x) => makePlayingSquare(y.toString(), x.toString()))
             )}
           </div>
         </div>
