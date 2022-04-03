@@ -32,23 +32,25 @@
   height: 4.76%;
   margin: auto;
   background-color: transparent;
-  border: 2px solid transparent;
-  z-index: 2;
+  border: 2px solid red;
+  z-index: 5;
 }
 
-.board-square {
-  width: 5%;
-  height: 5%;
-  margin: auto;
-  padding: 2px;
-  /* for now: */
-  background-color: transparent; 
+.black {
+  background-color: black;
+  border-radius: 50%;
+
+}
+
+.white {
+  background-color: white;
+  border-radius: 50%;
 }
 
 .visible-square {
   height: 105%;
     width: 105%;
-    position: relative;
     border: 2px solid rgb(196, 125, 2);
     margin: -64%;
+    z-index: -1;
 }
