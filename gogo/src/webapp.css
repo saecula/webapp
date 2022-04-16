@@ -17,40 +17,96 @@
   width: 94vh;
   height: 94vh;
   display: flex;
-  background-color: rgb(255, 196, 0);
+  background-color: transparent;
 }
 
 #playing-area {
   display: flex;
   flex-wrap: wrap;
+  height: 100%;
+  width: 100%;
   border: 2px solid transparent;
   z-index: 2;
+  background-color: goldenrod;
+}
+
+.topleft {
+  background: url('img/edgesquare.png');
+  background-size: contain;
+  background-position: center;
+}
+
+.topright {
+  background: url('img/edgesquare.png');
+  background-size: contain;
+  transform: rotate(90deg);
+  background-position: center;
+}
+
+.bottomleft {
+  background: url('img/edgesquare.png');
+  background-size: contain;
+  transform: rotate(270deg);
+  background-position: center;
+}
+
+.bottomright {
+  background: url('img/edgesquare.png');
+  background-size: contain;
+  transform: rotate(180deg);
+  background-position: center;
+}
+
+.top {
+  background: url('img/sidesquare.png');
+  background-size: contain;
+  background-position: center;
+}
+
+.bottom {
+  background: url('img/sidesquare.png');
+  background-size: contain;
+  transform: rotate(180deg);
+  background-position: center;
+}
+
+.left {
+  background: url('img/sidesquare.png');
+  background-size: contain;
+  transform: rotate(270deg);
+  background-position: center;
+}
+
+.right {
+  background: url('img/sidesquare.png');
+  background-size: contain;
+  transform: rotate(90deg);
+  background-position: center;
+}
+
+.mid {
+  background: url('img/midsquare.png');
+  background-size: contain;
+  background-position: center;
 }
 
 .playing-square {
-  width: 4.76%;
-  height: 4.76%;
-  margin: auto;
-  background-color: transparent;
-  border: 2px solid red;
-  z-index: 5;
+  width: 5.26%;
+  height: 5.26%;
 }
 
 .b {
-  background-color: black;
+  background: black;
   border-radius: 50%;
-
+  width: 4.76%;
+  height: 4.76%;
+  border: 2px solid #3e1b00;
 }
 
 .w {
-  background-color: white;
+  background: white;
   border-radius: 50%;
-}
-
-.visible-square {
-  height: 105%;
-    width: 105%;
-    border: 2px solid rgb(196, 125, 2);
-    margin: -64%;
-    z-index: -1;
+  width: 4.76%;
+  height: 4.76%;
+  border: 2px solid #3e1b00;
 }

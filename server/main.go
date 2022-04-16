@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -37,7 +36,7 @@ var PUT = "PUT"
 var DELETE = "DELETE"
 
 var clients = make(map[*websocket.Conn]bool)
-var broadcast = make(chan Message)
+var broadcast = make(chan Key)
 var upgrader = websocket.Upgrader{}
 
 var templates = template.Must(template.ParseFiles("edit.html", "view.html", "notfound.html"))
@@ -106,46 +105,46 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
-func mainHandler(w http.ResponseWriter, r *http.Request, title string) {
+func mainHandler(w http.ResponseWriter, r *http.Request, game string) {
 	fmt.Println("ping!")
 
 	switch r.Method {
 	case GET:
-		if title == "" {
-			serveMessages(w, r)
-		} else {
-			servePost(w, r, title)
-		}
+		serveGames(w, r)
 	case POST:
-		savePost(w, r, title)
+		saveGame(w, r, game)
 	case PUT:
-		savePost(w, r, title)
+		saveGame(w, r, game)
 	case DELETE:
-		deletePost(w, r, title)
+		deleteGame(w, r, game)
 	}
 }
 
-func serveMessages(w http.ResponseWriter, r *http.Request) {
-	files, err := ioutil.ReadDir("./posts")
+type Game struct {
+	Game string `json:"game"`
+	Next string `json:"next"`
+}
+
+func save(g *Game) error {
+	filename := "games/19.json"
+	gb, _ := json.Marshal(g)
+	return ioutil.WriteFile(filename, gb, 0600)
+}
+
+func serveGames(w http.ResponseWriter, r *http.Request) {
+	gamefiles, err := ioutil.ReadDir("./games")
 	if err != nil {
 		log.Fatal(err)
 	}
-	var messages []Message
-	for _, f := range files {
-		rawTitle := f.Name()
-		title := strings.TrimSuffix(rawTitle, filepath.Ext(rawTitle))
-		m, err := loadPostAsMessage(title)
+	var gb []byte
+	for _, f := range gamefiles {
+		gb, err = ioutil.ReadFile("games/" + f.Name())
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
-		messages = append(messages, *m)
-	}
-	json, err := json.Marshal(messages)
-	if err != nil {
-		panic(err)
 	}
 	w.WriteHeader(201)
-	w.Write(json)
+	w.Write(gb)
 	return
 }
 
@@ -162,10 +161,13 @@ func servePost(w http.ResponseWriter, r *http.Request, t string) {
 	w.Write(json)
 }
 
-func savePost(w http.ResponseWriter, r *http.Request, title string) {
+func saveGame(w http.ResponseWriter, r *http.Request, title string) {
 	body := r.FormValue("body")
-	p := &Post{Title: title, Body: []byte(body)}
-	err := p.save()
+	b := []byte(body)
+	var g *Game
+	json.Unmarshal(b, g)
+
+	err := save(g)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -173,7 +175,8 @@ func savePost(w http.ResponseWriter, r *http.Request, title string) {
 	http.Redirect(w, r, "/"+title, http.StatusCreated)
 }
 
-func deletePost(w http.ResponseWriter, r *http.Request, title string) {
+// todo: make for game
+func deleteGame(w http.ResponseWriter, r *http.Request, title string) {
 	body := r.FormValue("body")
 	p := &Post{Title: title, Body: []byte(body)}
 	err := p.delete()
@@ -201,6 +204,10 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
+type Key struct {
+	Key string `json:"key"`
+}
+
 func handleConnections(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(w, r, nil)
@@ -212,33 +219,31 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	clients[ws] = true
 
 	for {
-		var data Message
-		err := ws.ReadJSON(&data)
+		var key Key
+		err := ws.ReadJSON(&key)
 		if err != nil {
 			log.Printf("error in handleConnections: %#v", err)
 			delete(clients, ws)
 			break
 		}
 
-		broadcast <- data
+		broadcast <- key
 	}
 }
 
 func handleMessages() {
 	for {
-		msg := <-broadcast
-		log.Printf("received message: %v", msg)
+		key := <-broadcast
+		log.Printf("received message: %v", key)
 
-		saveMessageAsPost(msg)
-
-		for client := range clients {
-			err := client.WriteJSON(msg)
-			if err != nil {
-				log.Printf("error in handleMessages: %v", err)
-				client.Close()
-				delete(clients, client)
-			}
-		}
+		// for client := range clients {
+		// 	err := client.WriteJSON(msg)
+		// 	if err != nil {
+		// 		log.Printf("error in handleMessages: %v", err)
+		// 		client.Close()
+		// 		delete(clients, client)
+		// 	}
+		// }
 	}
 }
 
