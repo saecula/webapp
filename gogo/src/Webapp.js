@@ -43,7 +43,8 @@ const Board = ({ socket }) => {
 
   const setStone = (selectedLocation) => {
     console.log("hi", stoneLocation, "and", selectedLocation);
-    if (!isMyTurn || (stoneLocation && selectedLocation !== stoneLocation)) {
+    if (!isMyTurn) {
+      //|| (stoneLocation && selectedLocation !== stoneLocation)) {
       return;
     }
     console.log("hello", selectedLocation);
