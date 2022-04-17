@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { makeBoard } from "./util";
-import { STATES } from "./constants";
+import { makeBoard, calcSide } from "./util";
+import { states, moves } from "./constants";
 import "./webapp.css";
-
-const [board, boardTemplate] = makeBoard();
 
 const Webapp = () => {
   const [socket, setSocket] = useState(null);
@@ -16,6 +14,10 @@ const Webapp = () => {
 
   const initSocket = useCallback(() => {
     const s = new WebSocket(`ws://localhost:4000/ws`);
+    s.addEventListener("message", function ({ data }) {
+      const message = JSON.parse(data);
+      console.log("message!", message);
+    });
     setSocket(s);
   }, [setSocket]);
 
@@ -31,54 +33,86 @@ const Webapp = () => {
 };
 
 const Board = ({ socket }) => {
-  const [ourStone] = useState(STATES.black);
+  const [gameState, setGameState] = useState({});
+  const [boardTemplate, setBoardTemplate] = useState([]);
+
   const [isMyTurn, setIsMyTurn] = useState(true);
-  const [finishedTurn, setFinishedTurn] = useState(false);
-  const [gameState, setGameState] = useState(board);
 
-  const setOurStone = (pointKey) => {
-    if (!isMyTurn) {
-      alert("not your turn :3");
+  const [ourStone] = useState(states.BLACK);
+  const [stoneLocation, setStoneLocation] = useState("");
+
+  const setStone = (selectedLocation) => {
+    console.log("hi", stoneLocation, "and", selectedLocation);
+    if (!isMyTurn || (stoneLocation && selectedLocation !== stoneLocation)) {
       return;
     }
-    const [cRow, cCol] = pointKey.split(":");
-    const prevPlaceState = gameState[cRow][cCol];
-    const newPlaceState =
-      prevPlaceState === STATES.empty
-        ? ourStone
-        : prevPlaceState == ourStone
-        ? STATES.empty
-        : prevPlaceState;
+    console.log("hello", selectedLocation);
+    const [curRow, curCol] = selectedLocation.split(":");
+    const [oldRow, oldCol] = stoneLocation.split(":");
+    const prevPointState = gameState[curRow][curCol];
 
-    if (newPlaceState === prevPlaceState) {
-      return;
+    if (selectedLocation === stoneLocation) {
+      console.log("yes here");
+      setStoneLocation("");
+      setGameState((prevGameState) => ({
+        ...prevGameState,
+        [curRow]: { ...prevGameState[curRow], [curCol]: states.EMPTY },
+      }));
+    } else if (prevPointState === states.EMPTY) {
+      setStoneLocation(selectedLocation);
+      setGameState((prevGameState) => ({
+        ...prevGameState,
+        [oldRow]: { ...prevGameState[oldRow], [oldCol]: states.EMPTY },
+        [curRow]: { ...prevGameState[curRow], [curCol]: ourStone },
+      }));
     }
-    setGameState((prevGameState) => ({
-      ...prevGameState,
-      [cRow]: { ...prevGameState[cRow], [cCol]: newPlaceState },
-    }));
   };
 
   useEffect(() => {
+    const [initBoard, initBoardTemplate] = makeBoard();
+    setGameState(initBoard);
+    setBoardTemplate(initBoardTemplate);
     loadGameState();
   }, []);
 
   useEffect(() => {
+    console.log("sendsinggs :3", {
+      gameId: localStorage.getItem("gogameid"),
+      playerId: ourStone,
+      move: moves.PLAY,
+      point: stoneLocation,
+      finishedTurn: !isMyTurn,
+      boardtemp: gameState,
+    });
     socket?.send(
-      JSON.stringify({ game: gameState, played: ourStone, finishedTurn })
+      JSON.stringify({
+        gameId: localStorage.getItem("gogameid"),
+        playerId: ourStone,
+        move: moves.PLAY,
+        point: stoneLocation,
+        finishedTurn: !isMyTurn,
+      })
     );
+  }, [stoneLocation]);
+
+  useEffect(() => {
+    console.log("hm", gameState);
   }, [gameState]);
 
   const loadGameState = async () => {
+    const gameId = localStorage.getItem("gogameid");
+    console.log("fetchisng Gos game id", gameId);
+    const url = `http://localhost:4000/`;
     try {
-      const { data: retrievedGame } = await axios.get("http://localhost:4000");
-      console.log("retrieved", retrievedGame);
-      if (retrievedGame.game !== "hello:3") {
-        setGameState(retrievedGame.game);
-        setIsMyTurn(retrievedGame.next === ourStone);
+      const { data: retrievedGame } = await axios.get(url);
+      localStorage.setItem("gogameid", retrievedGame.id);
+      console.log("retrievaed", retrievedGame);
+      if (retrievedGame.gameId !== "new") {
+        // setGameState(retrievedGame.board);
+        setIsMyTurn(retrievedGame.nextPlayer === ourStone);
       }
     } catch (err) {
-      console.error("Error loading game state", err);
+      console.error("Errors loading game state", err);
     }
   };
 
@@ -90,7 +124,7 @@ const Board = ({ socket }) => {
             <PlayingSquare
               rowNum={y.toString()}
               colNum={x.toString()}
-              setOurStone={setOurStone}
+              setStone={setStone}
               gameState={gameState}
             >
               <hr style={{ color: "white", width: "1px" }} />
@@ -102,42 +136,19 @@ const Board = ({ socket }) => {
   );
 };
 
-const PlayingSquare = ({ rowNum, colNum, setOurStone, gameState }) => {
+const PlayingSquare = ({ rowNum, colNum, setStone, gameState }) => {
   const key = rowNum + ":" + colNum;
-  let side =
-    rowNum === "0"
-      ? "top"
-      : rowNum === "18"
-      ? "bottom"
-      : colNum === "0"
-      ? "left"
-      : colNum === "18"
-      ? "right"
-      : "mid";
-
-  side =
-    rowNum == "0" && colNum == "0"
-      ? "topleft"
-      : rowNum == "18" && colNum == "18"
-      ? "bottomright"
-      : rowNum == "0" && colNum == "18"
-      ? "topright"
-      : rowNum == "18" && colNum == "0"
-      ? "bottomleft"
-      : side;
-
-  return (
+  const side = calcSide(rowNum, colNum);
+  return gameState ? (
     <>
       <div
         key={key}
         id={key}
         className={`playing-square ${side} ${gameState[rowNum][colNum]}`}
-        onClick={() => setOurStone(key)}
-      >
-        {/* {rowNum !== "0" && colNum !== "0" && <div className="visible-square" />} */}
-      </div>
+        onClick={() => setStone(key)}
+      ></div>
     </>
-  );
+  ) : null;
 };
 
 export default Webapp;

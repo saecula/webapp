@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,18 +15,52 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type Post struct {
-	Email    string
-	Username string
-	Title    string
-	Body     []byte
+type Move string
+
+const (
+	// switch colors, only valid before first turn
+	Switch Move = "switch"
+	// play a stone
+	Play Move = "play"
+	// pass your turn
+	Pass Move = "pass"
+	// resign the game
+	Resign Move = "resign"
+)
+
+type TurnMessage struct {
+	GameId       string      `json:"gameId"`
+	PlayerId     string      `json:"playerId"`
+	Move         Move        `json:"move"`
+	Point        string      `json:"point"`
+	FinishedTurn bool        `json:"finishedTurn"`
+	BoardTemp    interface{} `json:"boardtemp"`
 }
 
-type Message struct {
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Title    string `json:"title"`
-	Body     string `json:"body"`
+type GameStateMessage struct {
+	Id         string      `json:"id"`
+	Board      interface{} `json:"board"`
+	NextPlayer string      `json:"nextPlayer"`
+}
+
+type GameState struct {
+	Id         string      `json:"id"`
+	Board      interface{} `json:"board"`
+	NextPlayer string      `json:"nextPlayer"`
+	Players    *PlayerMap  `json:"playerMap"`
+	Started    bool        `json:"started"`
+	Ended      bool        `json:"ended"`
+	Winner     string      `json:"winner"`
+}
+
+type PlayerMap struct {
+	B string `json:"b"`
+	W string `json:"w"`
+}
+
+type Player struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
 }
 
 var GET = "GET"
@@ -36,10 +69,9 @@ var PUT = "PUT"
 var DELETE = "DELETE"
 
 var clients = make(map[*websocket.Conn]bool)
-var broadcast = make(chan Key)
+var broadcast = make(chan TurnMessage)
 var upgrader = websocket.Upgrader{}
 
-var templates = template.Must(template.ParseFiles("edit.html", "view.html", "notfound.html"))
 var validPath = regexp.MustCompile("^([a-zA-Z0-0-9-]+)$")
 
 func getTitle(r *http.Request) (string, error) {
@@ -53,47 +85,70 @@ func getTitle(r *http.Request) (string, error) {
 	return title, nil
 }
 
-func (p *Post) save() error {
-	filename := "posts/" + p.Title + ".txt"
-	return ioutil.WriteFile(filename, p.Body, 0600)
-}
-
-func (p *Post) delete() error {
-	filename := "posts/" + p.Title + ".txt"
-	return os.Remove(filename)
-}
-
-func loadPost(title string) (*Post, error) {
-	filename := "posts/" + title + ".txt"
-	body, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
+func calcGame(tm *TurnMessage) *GameState {
+	prevGame, _ := loadGame(tm.GameId)
+	log.Printf("prev game %v", prevGame.Id)
+	if prevGame == nil {
+		return &GameState{}
 	}
-	return &Post{Title: title, Body: body}, nil
-}
-
-func loadPostAsMessage(title string) (*Message, error) {
-	filename := "posts/" + title + ".txt"
-	body, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	strBody := string(body)
-	return &Message{Title: title, Body: strBody}, nil
-}
-
-func saveMessageAsPost(msg Message) {
-	pageBody := []byte(msg.Body)
-
-	var pageTitle string
-	if msg.Title == "" {
-		pageTitle = uuid.NewString()
+	var started bool
+	if tm.Move == Switch {
+		started = false
 	} else {
-		pageTitle = msg.Title
+		started = true
+	}
+	var ended bool
+	if tm.Move == Resign {
+		ended = true
+	} else {
+		ended = false
 	}
 
-	p := &Post{Title: pageTitle, Body: pageBody}
-	p.save()
+	var nextPlayer string
+	if tm.FinishedTurn == false {
+		nextPlayer = tm.PlayerId
+	} else if tm.PlayerId == "b" {
+		nextPlayer = "w"
+	} else {
+		nextPlayer = "b"
+	}
+
+	return &GameState{
+		Id:         prevGame.Id,
+		Board:      tm.BoardTemp,
+		NextPlayer: nextPlayer,
+		Players:    prevGame.Players,
+		Started:    started,
+		Ended:      ended,
+		Winner:     "",
+	}
+}
+
+func (g *GameState) save() error {
+	filename := "games/" + g.Id + ".json"
+	v, err := json.Marshal(g)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	return ioutil.WriteFile(filename, v, 0600)
+}
+
+func loadGame(id string) (*GameState, error) {
+	filename := "games/" + id + ".json"
+	body, err := ioutil.ReadFile(filename)
+	var new bool
+	if err != nil {
+		log.Println("defaulting back to new game")
+		new = true
+		body, _ = ioutil.ReadFile("games/newgame.json")
+	}
+	var g *GameState
+	err = json.Unmarshal(body, &g)
+	if new {
+		g.Id = uuid.NewString()
+	}
+	return g, nil
 }
 
 func enableCors(w *http.ResponseWriter) {
@@ -105,86 +160,43 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
-func mainHandler(w http.ResponseWriter, r *http.Request, game string) {
-	fmt.Println("ping!")
-
-	switch r.Method {
-	case GET:
-		serveGames(w, r)
-	case POST:
-		saveGame(w, r, game)
-	case PUT:
-		saveGame(w, r, game)
-	case DELETE:
-		deleteGame(w, r, game)
-	}
-}
-
-type Game struct {
-	Game string `json:"game"`
-	Next string `json:"next"`
-}
-
-func save(g *Game) error {
-	filename := "games/19.json"
-	gb, _ := json.Marshal(g)
-	return ioutil.WriteFile(filename, gb, 0600)
-}
-
-func serveGames(w http.ResponseWriter, r *http.Request) {
-	gamefiles, err := ioutil.ReadDir("./games")
+func handleConnections(w http.ResponseWriter, r *http.Request) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var gb []byte
-	for _, f := range gamefiles {
-		gb, err = ioutil.ReadFile("games/" + f.Name())
+	defer ws.Close()
+
+	clients[ws] = true
+	for {
+		var turn TurnMessage
+		err := ws.ReadJSON(&turn)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("error in handleConnections: %#v", err)
+			delete(clients, ws)
+			break
+		}
+
+		broadcast <- turn
+	}
+}
+
+func handleMessages() {
+	for {
+		turnmsg := <-broadcast
+		log.Printf("received message: %v", turnmsg)
+		gamemsg := calcGame(&turnmsg)
+		log.Printf("sending message %v", gamemsg)
+		for client := range clients {
+			err := client.WriteJSON(gamemsg)
+			if err != nil {
+				log.Printf("error in handleMessages: %v", err)
+				client.Close()
+				delete(clients, client)
+			}
 		}
 	}
-	w.WriteHeader(201)
-	w.Write(gb)
-	return
-}
-
-func servePost(w http.ResponseWriter, r *http.Request, t string) {
-	p, err := loadPost(t)
-	if err != nil {
-		p = &Post{Title: "new"}
-	}
-	json, err := json.Marshal(p)
-	if err != nil {
-		panic(err)
-	}
-	w.WriteHeader(201)
-	w.Write(json)
-}
-
-func saveGame(w http.ResponseWriter, r *http.Request, title string) {
-	body := r.FormValue("body")
-	b := []byte(body)
-	var g *Game
-	json.Unmarshal(b, g)
-
-	err := save(g)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	http.Redirect(w, r, "/"+title, http.StatusCreated)
-}
-
-// todo: make for game
-func deleteGame(w http.ResponseWriter, r *http.Request, title string) {
-	body := r.FormValue("body")
-	p := &Post{Title: title, Body: []byte(body)}
-	err := p.delete()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	http.Redirect(w, r, "/", http.StatusAccepted)
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
@@ -204,46 +216,63 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
-type Key struct {
-	Key string `json:"key"`
+func mainHandler(w http.ResponseWriter, r *http.Request, game string) {
+	fmt.Println("httping!")
+	id := strings.TrimPrefix(r.URL.Path, "/")
+	log.Printf("hello here is url %v and id %s", r.URL.RawPath, id)
+	switch id {
+	case "":
+		serveNewGame(w)
+	default:
+		serveGame(w, id)
+	}
 }
 
-func handleConnections(w http.ResponseWriter, r *http.Request) {
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-	ws, err := upgrader.Upgrade(w, r, nil)
+func serveNewGame(w http.ResponseWriter) {
+	gb, err := ioutil.ReadFile("games/newgame.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer ws.Close()
-
-	clients[ws] = true
-
-	for {
-		var key Key
-		err := ws.ReadJSON(&key)
-		if err != nil {
-			log.Printf("error in handleConnections: %#v", err)
-			delete(clients, ws)
-			break
-		}
-
-		broadcast <- key
+	var g *GameState
+	if err := json.Unmarshal(gb, &g); err != nil {
+		log.Printf("goddammit")
+		log.Fatal(err)
 	}
+	g.Id = uuid.NewString()
+	log.Printf("saving new game %s", g.Id)
+	g.save()
+	gameMsg := &GameStateMessage{
+		Id:         g.Id,
+		Board:      g.Board,
+		NextPlayer: g.NextPlayer,
+	}
+	msg, _ := json.Marshal(&gameMsg)
+	w.WriteHeader(201)
+	w.Write(msg)
+	return
 }
 
-func handleMessages() {
-	for {
-		key := <-broadcast
-		log.Printf("received message: %v", key)
-
-		// for client := range clients {
-		// 	err := client.WriteJSON(msg)
-		// 	if err != nil {
-		// 		log.Printf("error in handleMessages: %v", err)
-		// 		client.Close()
-		// 		delete(clients, client)
-		// 	}
-		// }
+func serveGame(w http.ResponseWriter, id string) {
+	sg, err := ioutil.ReadFile(fmt.Sprintf("./games/%s", id))
+	if err != nil {
+		serveNewGame(w)
+	} else {
+		var g *GameState
+		if err := json.Unmarshal(sg, &g); err != nil {
+			log.Printf("goddammit id game")
+			log.Fatal(err)
+		}
+		g.Id = uuid.NewString()
+		log.Printf("saving new game %s", g.Id)
+		gameMsg := &GameStateMessage{
+			Id:         g.Id,
+			Board:      g.Board,
+			NextPlayer: g.NextPlayer,
+		}
+		msg, _ := json.Marshal(&gameMsg)
+		w.WriteHeader(201)
+		w.Write(msg)
+		return
 	}
 }
 
