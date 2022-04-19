@@ -30,7 +30,8 @@ const (
 
 type TurnMessage struct {
 	GameId       string      `json:"gameId"`
-	PlayerId     string      `json:"playerId"`
+	Player       string      `json:"player"`
+	Color        string      `json:"color"`
 	Move         Move        `json:"move"`
 	Point        string      `json:"point"`
 	FinishedTurn bool        `json:"finishedTurn"`
@@ -41,6 +42,7 @@ type GameStateMessage struct {
 	Id         string      `json:"id"`
 	Board      interface{} `json:"board"`
 	NextPlayer string      `json:"nextPlayer"`
+	Players    *PlayerMap  `json:"playerMap"`
 }
 
 type GameState struct {
@@ -54,13 +56,8 @@ type GameState struct {
 }
 
 type PlayerMap struct {
-	B string `json:"b"`
-	W string `json:"w"`
-}
-
-type Player struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	B string
+	W string
 }
 
 var GET = "GET"
@@ -85,18 +82,27 @@ func getTitle(r *http.Request) (string, error) {
 	return title, nil
 }
 
-func calcGame(tm *TurnMessage) *GameState {
+func calcGame(tm *TurnMessage) (*GameState, error) {
 	prevGame, _ := loadGame(tm.GameId)
 	log.Printf("prev game %v", prevGame.Id)
 	if prevGame == nil {
-		return &GameState{}
+		return &GameState{}, nil
 	}
 	var started bool
+	newPlayers := prevGame.Players
 	if tm.Move == Switch {
+		if prevGame.Started == true {
+			return nil, errors.New("invalid switch!")
+		}
+		newPlayers = &PlayerMap{
+			B: prevGame.Players.W,
+			W: prevGame.Players.B,
+		}
 		started = false
 	} else {
 		started = true
 	}
+
 	var ended bool
 	if tm.Move == Resign {
 		ended = true
@@ -106,26 +112,28 @@ func calcGame(tm *TurnMessage) *GameState {
 
 	var nextPlayer string
 	if tm.FinishedTurn == false {
-		nextPlayer = tm.PlayerId
-	} else if tm.PlayerId == "b" {
-		nextPlayer = "w"
-	} else {
-		nextPlayer = "b"
+		nextPlayer = tm.Player
+	} else if tm.Move != Switch {
+		if tm.Color == "b" {
+			nextPlayer = prevGame.Players.W
+		} else {
+			nextPlayer = prevGame.Players.B
+		}
 	}
 
 	return &GameState{
 		Id:         prevGame.Id,
 		Board:      tm.BoardTemp,
 		NextPlayer: nextPlayer,
-		Players:    prevGame.Players,
+		Players:    newPlayers,
 		Started:    started,
 		Ended:      ended,
 		Winner:     "",
-	}
+	}, nil
 }
 
 func (g *GameState) save() error {
-	filename := "games/" + g.Id + ".json"
+	filename := "db/" + g.Id + ".json"
 	v, err := json.Marshal(g)
 	if err != nil {
 		log.Fatal(err)
@@ -135,19 +143,19 @@ func (g *GameState) save() error {
 }
 
 func loadGame(id string) (*GameState, error) {
-	filename := "games/" + id + ".json"
+	filename := "db/" + id + ".json"
 	body, err := ioutil.ReadFile(filename)
-	var new bool
+	// var new bool
 	if err != nil {
-		log.Println("defaulting back to new game")
-		new = true
-		body, _ = ioutil.ReadFile("games/newgame.json")
+		log.Println("defaulting to only game")
+		// new = true
+		body, _ = ioutil.ReadFile("db/theonlygame.json")
 	}
 	var g *GameState
 	err = json.Unmarshal(body, &g)
-	if new {
-		g.Id = uuid.NewString()
-	}
+	// if new {
+	// 	g.Id = uuid.NewString()
+	// }
 	return g, nil
 }
 
@@ -186,10 +194,14 @@ func handleMessages() {
 	for {
 		turnmsg := <-broadcast
 		log.Printf("received message: %v", turnmsg)
-		gamemsg := calcGame(&turnmsg)
-		log.Printf("sending message %v", gamemsg)
+		game, err := calcGame(&turnmsg) // screw game msg for now
+		game.save()
+		if err != nil {
+			log.Fatal("invalid move submitted")
+		}
+		log.Printf("sending message %v", game)
 		for client := range clients {
-			err := client.WriteJSON(gamemsg)
+			err := client.WriteJSON(game)
 			if err != nil {
 				log.Printf("error in handleMessages: %v", err)
 				client.Close()
@@ -219,7 +231,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 func mainHandler(w http.ResponseWriter, r *http.Request, game string) {
 	fmt.Println("httping!")
 	id := strings.TrimPrefix(r.URL.Path, "/")
-	log.Printf("hello here is url %v and id %s", r.URL.RawPath, id)
+	log.Printf("hello here is url %v and id %s", r.URL, id)
 	switch id {
 	case "":
 		serveNewGame(w)
@@ -229,7 +241,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request, game string) {
 }
 
 func serveNewGame(w http.ResponseWriter) {
-	gb, err := ioutil.ReadFile("games/newgame.json")
+	gb, err := ioutil.ReadFile("db/theonlygame.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -238,22 +250,23 @@ func serveNewGame(w http.ResponseWriter) {
 		log.Printf("goddammit")
 		log.Fatal(err)
 	}
-	g.Id = uuid.NewString()
-	log.Printf("saving new game %s", g.Id)
+	// g.Id = uuid.NewString()
+	log.Printf("loading new game %s", g.Id)
 	g.save()
-	gameMsg := &GameStateMessage{
+	game := &GameStateMessage{
 		Id:         g.Id,
 		Board:      g.Board,
 		NextPlayer: g.NextPlayer,
+		Players:    g.Players,
 	}
-	msg, _ := json.Marshal(&gameMsg)
+	msg, _ := json.Marshal(&game)
 	w.WriteHeader(201)
 	w.Write(msg)
 	return
 }
 
 func serveGame(w http.ResponseWriter, id string) {
-	sg, err := ioutil.ReadFile(fmt.Sprintf("./games/%s", id))
+	sg, err := ioutil.ReadFile(fmt.Sprintf("./db/%s", id))
 	if err != nil {
 		serveNewGame(w)
 	} else {
@@ -264,12 +277,13 @@ func serveGame(w http.ResponseWriter, id string) {
 		}
 		g.Id = uuid.NewString()
 		log.Printf("saving new game %s", g.Id)
-		gameMsg := &GameStateMessage{
+		game := &GameStateMessage{
 			Id:         g.Id,
 			Board:      g.Board,
 			NextPlayer: g.NextPlayer,
+			Players:    g.Players,
 		}
-		msg, _ := json.Marshal(&gameMsg)
+		msg, _ := json.Marshal(&game)
 		w.WriteHeader(201)
 		w.Write(msg)
 		return

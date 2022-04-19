@@ -19,6 +19,8 @@ export const makeBoard = () => {
   return [board, boardTemplate];
 };
 
+export const connReady = (socket) => socket?.readyState === 1;
+
 export const calcSide = (rowNum, colNum) => {
   let side =
     rowNum === "0"
@@ -32,13 +34,13 @@ export const calcSide = (rowNum, colNum) => {
       : "mid";
 
   side =
-    rowNum == "0" && colNum == "0"
+    rowNum === "0" && colNum === "0"
       ? "topleft"
-      : rowNum == "18" && colNum == "18"
+      : rowNum === "18" && colNum === "18"
       ? "bottomright"
-      : rowNum == "0" && colNum == "18"
+      : rowNum === "0" && colNum === "18"
       ? "topright"
-      : rowNum == "18" && colNum == "0"
+      : rowNum === "18" && colNum === "0"
       ? "bottomleft"
       : side;
 
