@@ -6,5 +6,5 @@ Play go with Kathleen.
 
 - cd server
 - go run main.go
-- cd ../svelte
+- cd ../gogo
 - npm run start
