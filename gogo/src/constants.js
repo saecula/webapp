@@ -1,3 +1,6 @@
+export const SERVER_URL = `http://localhost:4000/`;
+export const PLAYER_NAME_LOCALSTORAGE = "gogoname";
+
 export const states = {
   EMPTY: "e",
   BLACK: "b",

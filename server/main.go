@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -35,29 +34,29 @@ type TurnMessage struct {
 	Move         Move        `json:"move"`
 	Point        string      `json:"point"`
 	FinishedTurn bool        `json:"finishedTurn"`
-	BoardTemp    interface{} `json:"boardtemp"`
+	BoardTemp    interface{} `json:"boardTemp"`
 }
 
 type GameStateMessage struct {
 	Id         string      `json:"id"`
 	Board      interface{} `json:"board"`
 	NextPlayer string      `json:"nextPlayer"`
-	Players    *PlayerMap  `json:"playerMap"`
+	Players    *PlayerMap  `json:"players"`
 }
 
 type GameState struct {
 	Id         string      `json:"id"`
 	Board      interface{} `json:"board"`
 	NextPlayer string      `json:"nextPlayer"`
-	Players    *PlayerMap  `json:"playerMap"`
+	Players    *PlayerMap  `json:"players"`
 	Started    bool        `json:"started"`
 	Ended      bool        `json:"ended"`
 	Winner     string      `json:"winner"`
 }
 
 type PlayerMap struct {
-	B string
-	W string
+	B string `json:"b"`
+	W string `json:"w"`
 }
 
 var GET = "GET"
@@ -250,44 +249,15 @@ func serveNewGame(w http.ResponseWriter) {
 		log.Printf("goddammit")
 		log.Fatal(err)
 	}
-	// g.Id = uuid.NewString()
-	log.Printf("loading new game %s", g.Id)
-	g.save()
-	game := &GameStateMessage{
-		Id:         g.Id,
-		Board:      g.Board,
-		NextPlayer: g.NextPlayer,
-		Players:    g.Players,
-	}
-	msg, _ := json.Marshal(&game)
+	log.Printf("loading new game %v", g)
+	gRes, _ := json.Marshal(&g)
 	w.WriteHeader(201)
-	w.Write(msg)
+	w.Write(gRes)
 	return
 }
 
 func serveGame(w http.ResponseWriter, id string) {
-	sg, err := ioutil.ReadFile(fmt.Sprintf("./db/%s", id))
-	if err != nil {
-		serveNewGame(w)
-	} else {
-		var g *GameState
-		if err := json.Unmarshal(sg, &g); err != nil {
-			log.Printf("goddammit id game")
-			log.Fatal(err)
-		}
-		g.Id = uuid.NewString()
-		log.Printf("saving new game %s", g.Id)
-		game := &GameStateMessage{
-			Id:         g.Id,
-			Board:      g.Board,
-			NextPlayer: g.NextPlayer,
-			Players:    g.Players,
-		}
-		msg, _ := json.Marshal(&game)
-		w.WriteHeader(201)
-		w.Write(msg)
-		return
-	}
+	log.Print("not serving id game for now")
 }
 
 func main() {
