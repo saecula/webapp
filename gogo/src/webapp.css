@@ -13,6 +13,31 @@
   color: white;
 }
 
+.modal-container {
+  height: 98vh;
+  background-color: #3c3c3ca6;
+  position: absolute;
+  width: 98vw;
+  border: 10px solid fuchsia;
+  z-index: 3;
+  display: flex;
+}
+
+.modal {
+  display: flex;
+  margin: auto;
+  height: 50vh;
+  width: 50vw;
+  border: 10px solid lime;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.modal-input {
+  font-size: .8em;
+  margin: 1em;
+}
+
 #board-container {
   width: 94vh;
   height: 94vh;
