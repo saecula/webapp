@@ -23,6 +23,7 @@
   display: flex;
 }
 
+
 .modal {
   display: flex;
   margin: auto;
@@ -31,6 +32,17 @@
   border: 10px solid lime;
   justify-content: center;
   flex-direction: column;
+}
+
+.error-modal {
+  display: flex;
+  margin: auto;
+  height: 50vh;
+  width: 50vw;
+  border: 10px solid lime;
+  justify-content: center;
+  flex-direction: column;
+  background-color: #ff000030;
 }
 
 .modal-input {
@@ -123,15 +135,19 @@
 .b {
   background: black;
   border-radius: 50%;
-  width: 4.74%;
-  height: 4.74%;
+  width: 4.81%;
+  height: 4.81%;
   border: 2px solid #3e1b00;
 }
 
 .w {
   background: white;
   border-radius: 50%;
-  width: 4.74%;
-  height: 4.74%;
+  width: 4.81%;
+  height: 4.81%;
   border: 2px solid #3e1b00;
+}
+
+.selected {
+  border: 2px solid lime !important;
 }

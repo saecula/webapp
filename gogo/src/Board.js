@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
   makeBoard,
   calcSide,
@@ -7,127 +6,85 @@ import {
   calculateLocalMove,
   getStoneColor,
 } from "./util";
-import {
-  states,
-  moves,
-  SERVER_URL,
-  PLAYER_NAME_LOCALSTORAGE,
-} from "./constants";
+import { states, moves } from "./constants";
 import "./webapp.css";
 
 const [initBoard, boardTemplate] = makeBoard();
 
-const Board = ({ socket }) => {
+const Board = ({ socket, playerName, gameData }) => {
   const [gameState, setGameState] = useState(initBoard);
-
-  const [playerName, setPlayerName] = useState(
-    localStorage.getItem(PLAYER_NAME_LOCALSTORAGE)
-  );
-
   const [ourStone, setOurStone] = useState(states.BLACK);
   const [stoneLocation, setStoneLocation] = useState("");
-  const [isMyTurn, setIsMyTurn] = useState(true);
-  const loadGameState = async () => {
-    try {
-      const { data: retrievedGame } = await axios.get(SERVER_URL, {
-        params: { id: playerName },
-      });
+  const [finishedTurn, setFinishedTurn] = useState(false);
+  const [godMode] = useState(false); //temp, put pieces wherever
 
-      console.log("retrieved game:", retrievedGame);
-      setGameState(retrievedGame.board);
-
-      const myStoneColor = getStoneColor(retrievedGame, playerName);
-      setOurStone(myStoneColor);
-      setIsMyTurn(retrievedGame.nextPlayer === playerName);
-    } catch (err) {
-      console.error("Errors loading game state", err);
+  useEffect(() => {
+    if (gameData) {
+      const { board, nextPlayer } = gameData;
+      !godMode && setGameState(board);
+      console.log("huh", nextPlayer, playerName);
+      setFinishedTurn(nextPlayer !== playerName);
+      setOurStone(getStoneColor(gameData, playerName));
     }
-  };
+  }, [gameData]);
 
-  const setStone = (selectedLocation) => {
-    if (!isMyTurn) {
+  useEffect(() => {
+    if (connReady(socket) && finishedTurn) {
+      console.log("sending game");
+      socket.send(
+        JSON.stringify({
+          gameId: "theonlygame",
+          player: playerName,
+          color: ourStone,
+          move: moves.PLAY,
+          point: stoneLocation,
+          finishedTurn,
+          boardTemp: gameState,
+        })
+      );
+    }
+  }, [socket, finishedTurn]);
+
+  const setStone = ({ target: { id: selectedLocation }, detail }) => {
+    if (finishedTurn) {
       console.log("not my turn.");
       return;
     }
-    const [newBoard, newStoneLocation] = calculateLocalMove(
+    const [newBoard, newStoneLocation, isFinished] = calculateLocalMove(
       gameState,
       stoneLocation,
       selectedLocation,
-      ourStone
+      ourStone,
+      detail,
+      godMode
     );
     setStoneLocation(newStoneLocation);
     setGameState(newBoard);
-  };
-
-  useEffect(() => {
-    socket?.addEventListener("message", function ({ data }) {
-      const message = JSON.parse(data);
-      console.log("got message!", message);
-    });
-  }, [socket]);
-
-  useEffect(() => {
-    loadGameState();
-  }, []);
-
-  useEffect(() => {
-    if (connReady(socket)) {
-      console.log("sending~ (not really)", {
-        gameId: "theonlygame",
-        player: playerName,
-        color: ourStone,
-        move: moves.PLAY,
-        point: stoneLocation,
-        finishedTurn: !isMyTurn,
-        boardTemp: gameState,
-      });
-      //   socket.send(
-      //     JSON.stringify({
-      //         gameId: "theonlygame",
-      //         player: playerName,
-      //         color: ourStone,
-      //         move: moves.PLAY,
-      //         point: stoneLocation,
-      //         finishedTurn: !isMyTurn,
-      //         boardTemp: gameState,
-      //     })
-      //   );
+    if (isFinished) {
+      setFinishedTurn(true);
     }
-  }, [stoneLocation, socket]);
+  };
 
   return (
     <div id="board-container">
       <div id="playing-area">
         {boardTemplate.map((rows, y) =>
           rows.map((_, x) => (
-            <PlayingSquare
-              rowNum={y.toString()}
-              colNum={x.toString()}
-              setStone={setStone}
-              gameState={gameState}
-            >
-              <hr style={{ color: "white", width: "1px" }} />
-            </PlayingSquare>
+            <div
+              key={y + ":" + x}
+              id={y + ":" + x}
+              className={`playing-square 
+                ${calcSide(y, x)} 
+                ${gameState[y][x]} ${
+                stoneLocation === y + ":" + x && "selected"
+              }`}
+              onClick={setStone}
+            />
           ))
         )}
       </div>
     </div>
   );
-};
-
-const PlayingSquare = ({ rowNum, colNum, setStone, gameState }) => {
-  const key = rowNum + ":" + colNum;
-  const side = calcSide(rowNum, colNum);
-  return gameState ? (
-    <>
-      <div
-        key={key}
-        id={key}
-        className={`playing-square ${side} ${gameState[rowNum][colNum]}`}
-        onClick={() => setStone(key)}
-      ></div>
-    </>
-  ) : null;
 };
 
 export default Board;

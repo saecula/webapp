@@ -23,24 +23,24 @@ export const connReady = (socket) => socket?.readyState === 1;
 
 export const calcSide = (rowNum, colNum) => {
   let side =
-    rowNum === "0"
+    rowNum === 0
       ? "top"
-      : rowNum === "18"
+      : rowNum === 18
       ? "bottom"
-      : colNum === "0"
+      : colNum === 0
       ? "left"
-      : colNum === "18"
+      : colNum === 18
       ? "right"
       : "mid";
 
   side =
-    rowNum === "0" && colNum === "0"
+    rowNum === 0 && colNum === 0
       ? "topleft"
-      : rowNum === "18" && colNum === "18"
+      : rowNum === 18 && colNum === 18
       ? "bottomright"
-      : rowNum === "0" && colNum === "18"
+      : rowNum === 0 && colNum === 18
       ? "topright"
-      : rowNum === "18" && colNum === "0"
+      : rowNum === 18 && colNum === 0
       ? "bottomleft"
       : side;
 
@@ -51,10 +51,15 @@ export const calculateLocalMove = (
   gameState,
   oldLocation,
   attemptedLocation,
-  ourStone
+  ourStone,
+  detail,
+  godMode = false
 ) => {
+  let isFinished = false;
   let newGameState = gameState;
   let newStoneLocation = oldLocation;
+
+  let clickTimer;
 
   let hadBeenPlaced, oldRow, oldCol;
   const [curRow, curCol] = attemptedLocation.split(":");
@@ -65,8 +70,21 @@ export const calculateLocalMove = (
   }
   const prevPointState = gameState[curRow][curCol];
 
-  if (attemptedLocation === oldLocation) {
+  if (godMode) {
     newStoneLocation = "";
+    newGameState = {
+      ...gameState,
+      [curRow]: {
+        ...gameState[curRow],
+        [curCol]: prevPointState !== states.EMPTY ? states.EMPTY : ourStone,
+      },
+    };
+  } else if (attemptedLocation === oldLocation) {
+    console.log("detail....", detail);
+    newStoneLocation = "";
+    if (detail > 1) {
+      return [newGameState, newStoneLocation, true];
+    }
     newGameState = {
       ...gameState,
       [curRow]: { ...gameState[curRow], [curCol]: states.EMPTY },
@@ -85,10 +103,31 @@ export const calculateLocalMove = (
     };
     newGameState = boardWithNewLocation;
   }
-  return [newGameState, newStoneLocation];
+  return [newGameState, newStoneLocation, isFinished];
 };
 
 export const getStoneColor = (retrievedGame, playerName) => {
   const { b } = retrievedGame.players;
   return b === playerName ? states.BLACK : states.WHITE;
+};
+
+export const getPlayerNames = (gameData) =>
+  Object.values(gameData?.players || []).filter((n) => !!n);
+
+export const validateNameInput = (e) => {
+  const input = e.target?.value || e.target[0]?.value;
+  console.log("hmm value", input);
+
+  let alertMsg;
+  if (!input) {
+    alertMsg = "no value, hmm.";
+  } else if (input.length > 32) {
+    alertMsg = "pls pick shorter name :3";
+  } else if (input.includes("<") || input.includes(";")) {
+    alertMsg = "pls no weird symbol :3";
+  }
+  if (alertMsg) {
+    alert(alertMsg);
+  }
+  return input;
 };
