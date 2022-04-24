@@ -3,7 +3,7 @@ services:
   server:
     build:
       dockerfile: Dockerfile
-      context: ./server
+      context: ./
     ports:
       - "4000:4000"
   svelte:
