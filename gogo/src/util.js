@@ -8,11 +8,9 @@ export const makeBoard = () => {
     .map(() => Array(19).fill(null));
 
   boardTemplate.forEach((row, i) => {
-    const rowKey = i;
-    board[rowKey] = {};
+    board[i] = {};
     row.forEach((_, y) => {
-      const squareKey = y;
-      board[rowKey][squareKey] = states.EMPTY;
+      board[i][y] = states.EMPTY;
     });
   });
   console.log("hmmm", board);
@@ -116,13 +114,11 @@ export const getPlayerNames = (gameData) =>
 
 export const validateNameInput = (e) => {
   const input = e.target?.value || e.target[0]?.value;
-  console.log("hmm value", input);
-
   let alertMsg;
   if (!input) {
     alertMsg = "no value, hmm.";
   } else if (input.length > 32) {
-    alertMsg = "pls pick shorter name :3";
+    alertMsg = "pls pick shorter name";
   } else if (input.includes("<") || input.includes(";")) {
     alertMsg = "pls no weird symbol :3";
   }
