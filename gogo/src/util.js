@@ -57,8 +57,6 @@ export const calculateLocalMove = (
   let newGameState = gameState;
   let newStoneLocation = oldLocation;
 
-  let clickTimer;
-
   let hadBeenPlaced, oldRow, oldCol;
   const [curRow, curCol] = attemptedLocation.split(":");
   if (oldLocation) {

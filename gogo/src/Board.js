@@ -30,10 +30,18 @@ const Board = ({ socket, playerName, gameData }) => {
 
   useEffect(() => {
     if (connReady(socket) && finishedTurn) {
-      console.log("sending game");
+      console.log("sending game", {
+        id: "theonlygame",
+        player: playerName,
+        color: ourStone,
+        move: moves.PLAY,
+        point: stoneLocation,
+        finishedTurn,
+        boardTemp: gameState,
+      });
       socket.send(
         JSON.stringify({
-          gameId: "theonlygame",
+          id: "theonlygame",
           player: playerName,
           color: ourStone,
           move: moves.PLAY,
