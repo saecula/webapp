@@ -45,6 +45,12 @@ export const calcSide = (rowNum, colNum) => {
   return side;
 };
 
+export const removeLastPlayed = (gameState, stoneLocation) => {
+  const [row, col] = stoneLocation.split(":");
+  gameState[row][col] = "e";
+  return gameState;
+};
+
 export const calculateLocalMove = (
   gameState,
   oldLocation,

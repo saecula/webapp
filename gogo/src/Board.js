@@ -5,8 +5,10 @@ import {
   connReady,
   calculateLocalMove,
   getStoneColor,
+  removeLastPlayed,
 } from "./util";
 import { states, moves } from "./constants";
+import { PassButton, ResignButton } from "./Buttons";
 import "./webapp.css";
 
 const [initBoard, boardTemplate] = makeBoard();
@@ -93,24 +95,48 @@ const Board = ({ socket, playerName, gameData }) => {
     }
   };
 
+  const onPass = () => {
+    setFinishedTurn(true);
+    const board = removeLastPlayed(gameState, stoneLocation);
+    if (connReady(socket)) {
+      socket.send(
+        JSON.stringify({
+          id: "theonlygame",
+          player: playerName,
+          color: ourStone,
+          move: moves.PASS,
+          point: "",
+          finishedTurn: true,
+          boardTemp: board,
+        })
+      );
+    }
+  };
+
   return (
-    <div id="board-container">
-      <div id="playing-area">
-        {boardTemplate.map((rows, y) =>
-          rows.map((_, x) => (
-            <div
-              key={y + ":" + x}
-              id={y + ":" + x}
-              className={`playing-square 
+    <div>
+      <div
+        id="board-container"
+        className={`board-${finishedTurn ? "notmyturn" : "myturn"}`}
+      >
+        <div id="playing-area">
+          {boardTemplate.map((rows, y) =>
+            rows.map((_, x) => (
+              <div
+                key={y + ":" + x}
+                id={y + ":" + x}
+                className={`playing-square 
                 ${calcSide(y, x)} 
                 ${gameState[y][x]} ${
-                stoneLocation === y + ":" + x && "selected"
-              }`}
-              onClick={setStone}
-            />
-          ))
-        )}
+                  stoneLocation === y + ":" + x && "selected"
+                }`}
+                onClick={setStone}
+              />
+            ))
+          )}
+        </div>
       </div>
+      <PassButton onPass={onPass} disabled={finishedTurn} />
     </div>
   );
 };
