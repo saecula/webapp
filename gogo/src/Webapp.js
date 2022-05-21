@@ -8,7 +8,7 @@ import ErrorModal from "./ErrorModal";
 import "./webapp.css";
 
 const Webapp = () => {
-  const [socket, setSocket] = useState(null);
+  const [socket, setSocket] = useState(undefined);
   const [gameData, setGameData] = useState(null);
   const [loaded, setIsLoaded] = useState(false);
   const [playerName, setPlayerName] = useState(
@@ -22,11 +22,11 @@ const Webapp = () => {
     return disconnectSocket;
   }, []);
 
-  const loadGameState = async () => {
+  const loadGameState = useCallback(async () => {
     const id = window.location?.pathname?.slice(1);
     try {
       const { data } = await axios.get(SERVER_URL, id && { params: { id } });
-      // determine if that id is valid on backend
+      // determine if t sdhat id is valid on backend
       // if not send back 404...see how axios sends it
       // if on brand new game, be able to auto populate stored name
       if (!getPlayerNames(data).includes(playerName)) {
@@ -38,23 +38,21 @@ const Webapp = () => {
       console.error("Errors loading game state", err);
       setFetchError(err);
     }
-  };
-
-  useEffect(() => {
-    socket?.addEventListener("message", function ({ data }) {
-      const parsedData = JSON.parse(data);
-      console.log("got game data on socket:", parsedData);
-      setGameData(parsedData);
-    });
-  }, [socket]);
+  }, [setPlayerName, setGameData, setIsLoaded, setFetchError]);
 
   const initSocket = useCallback(() => {
     const s = new WebSocket(`ws://localhost:4000/ws`);
+    s.addEventListener("message", function ({ data }) {
+      const parsedData = JSON.parse(data);
+      console.log("got game data on ssocket:", parsedData);
+      setGameData(parsedData);
+    });
     setSocket(s);
   }, [setSocket]);
 
   const disconnectSocket = useCallback(() => {
-    socket?.disconnect && socket.disconnect();
+    console.log("for reals", socket);
+    socket?.disconnect();
     setSocket(null);
   }, [socket, setSocket]);
 
