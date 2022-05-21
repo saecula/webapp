@@ -50,7 +50,7 @@ export const calculateLocalMove = (
   oldLocation,
   attemptedLocation,
   ourStone,
-  detail,
+  numClicks,
   godMode = false
 ) => {
   let isFinished = false;
@@ -76,11 +76,11 @@ export const calculateLocalMove = (
       },
     };
   } else if (attemptedLocation === oldLocation) {
-    console.log("detail....", detail);
-    newStoneLocation = "";
-    if (detail > 1) {
+    console.log("numClicks....", numClicks);
+    if (numClicks > 1) {
       return [newGameState, newStoneLocation, true];
     }
+    newStoneLocation = "";
     newGameState = {
       ...gameState,
       [curRow]: { ...gameState[curRow], [curCol]: states.EMPTY },

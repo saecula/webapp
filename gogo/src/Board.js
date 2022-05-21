@@ -16,6 +16,7 @@ const Board = ({ socket, playerName, gameData }) => {
   const [ourStone, setOurStone] = useState(states.BLACK);
   const [stoneLocation, setStoneLocation] = useState("");
   const [finishedTurn, setFinishedTurn] = useState(false);
+  const [sentGame, setSentGame] = useState(false);
   const [godMode] = useState(false); //temp, put pieces wherever
 
   useEffect(() => {
@@ -29,7 +30,15 @@ const Board = ({ socket, playerName, gameData }) => {
   }, [gameData]);
 
   useEffect(() => {
-    if (connReady(socket) && finishedTurn) {
+    console.log(
+      "finished turn:",
+      finishedTurn,
+      ", game unsent:",
+      !sentGame,
+      "stone location:",
+      stoneLocation
+    );
+    if (connReady(socket) && finishedTurn && !sentGame) {
       console.log("sending game", {
         id: "theonlygame",
         player: playerName,
@@ -50,10 +59,21 @@ const Board = ({ socket, playerName, gameData }) => {
           boardTemp: gameState,
         })
       );
+      setSentGame(true);
+      setStoneLocation("");
     }
-  }, [socket, finishedTurn]);
+  }, [socket, finishedTurn, stoneLocation, playerName, ourStone, gameState]);
 
-  const setStone = ({ target: { id: selectedLocation }, detail }) => {
+  useEffect(() => {
+    if (!finishedTurn) {
+      setSentGame(false);
+    }
+  }, [finishedTurn]);
+
+  const setStone = ({
+    target: { id: selectedLocation },
+    detail: numClicks,
+  }) => {
     if (finishedTurn) {
       console.log("not my turn.");
       return;
@@ -63,7 +83,7 @@ const Board = ({ socket, playerName, gameData }) => {
       stoneLocation,
       selectedLocation,
       ourStone,
-      detail,
+      numClicks,
       godMode
     );
     setStoneLocation(newStoneLocation);
