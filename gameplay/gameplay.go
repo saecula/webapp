@@ -1,27 +1,10 @@
-package gameplay
+package gp
 
 import (
 	"log"
 	"strconv"
 	"strings"
 )
-
-func HandleStonePlay(point string, color string, board map[string]map[string]string) (bool, map[string]map[string]string) {
-	valid := false
-	pointState := makePointState(point, board)
-	liberties := getSurroundingPoints(pointState, board, "e")
-	if len(liberties) > 0 {
-		valid = true
-	}
-	for _, sp := range getSurroundingPoints(pointState, board, oppositeOf(color)) {
-		hasNoLiberties, checkedPoints := wholeThinghasNoLiberties(sp, board)
-		if hasNoLiberties {
-			valid = true
-			removeWholeThing(checkedPoints, board)
-		}
-	}
-	return valid, board
-}
 
 type PointState struct {
 	key   string
@@ -30,9 +13,50 @@ type PointState struct {
 	state string
 }
 
+func HandleStonePlay(point string, color string, board map[string]map[string]string) (bool, map[string]map[string]string) {
+	valid := false
+	if point == "" {
+		log.Println("no point given!")
+		return valid, board
+	}
+	pointState := makePointState(point, board)
+	liberties := getSurroundingPoints(pointState, board, "e")
+	ownColors := getSurroundingPoints(pointState, board, color)
+
+	var loggablelibs []string
+	for _, x := range liberties {
+		loggablelibs = append(loggablelibs, x.key)
+	}
+
+	if len(ownColors) == 4 {
+		valid = true
+		return valid, board
+	}
+
+	log.Printf("found liberties %v", loggablelibs)
+	if len(liberties) > 0 {
+		valid = true
+	}
+	for _, sp := range getSurroundingPoints(pointState, board, oppositeOf(color)) {
+		log.Println("wholeThinghasNoLiberties: iterating surrounding points of last played")
+		hasNoLiberties, checkedPoints := wholeThinghasNoLiberties(sp, board)
+		if hasNoLiberties {
+			valid = true
+			log.Println("Removing no-liberty blob")
+			removeWholeThing(checkedPoints, board)
+		}
+	}
+	if !valid {
+		valid = placementIsValid(pointState, board)
+	}
+	log.Println("finished analyzing move")
+	return valid, board
+}
+
 func makePointState(point string, board map[string]map[string]string) *PointState {
 	coordinates := strings.Split(point, ":")
 	row, err := strconv.Atoi(coordinates[0])
+	log.Printf("point: %s, coords: %v", point, coordinates)
 	if err != nil {
 		log.Fatal("done gone wrong")
 	}
@@ -48,83 +72,116 @@ func makePointState(point string, board map[string]map[string]string) *PointStat
 	}
 }
 
+func placementIsValid(pointState *PointState, board map[string]map[string]string) bool {
+	hasNoLiberties, _ := wholeThinghasNoLiberties(pointState, board)
+	return !hasNoLiberties
+}
+
 func getSurroundingPoints(pointState *PointState, board map[string]map[string]string, state string) []*PointState {
-	leftCol := pointState.x - 1
-	upRow := pointState.y - 1
-	rightCol := pointState.x + 1
-	downRow := pointState.y + 1
+	upRow := pointState.x - 1
+	leftCol := pointState.y - 1
+	downRow := pointState.x + 1
+	rightCol := pointState.y + 1
 
 	surroundingPoints := []*PointState{}
 
-	rstr := strconv.Itoa(pointState.y)
-	cstr := strconv.Itoa(leftCol)
-	if leftCol >= 0 && board[rstr][cstr] == state {
+	rowstring := strconv.Itoa(pointState.x)
+	colstring := strconv.Itoa(leftCol)
+	if leftCol >= 0 && board[rowstring][colstring] == state {
 		pointLeft := &PointState{
-			key:   rstr + ":" + cstr,
-			x:     pointState.y,
+			key:   rowstring + ":" + colstring,
+			x:     pointState.x,
 			y:     leftCol,
-			state: board[rstr][cstr],
+			state: board[rowstring][colstring],
 		}
 		surroundingPoints = append(surroundingPoints, pointLeft)
 	}
-	rstr = strconv.Itoa(upRow)
-	cstr = strconv.Itoa(pointState.x)
-	if upRow >= 0 && board[rstr][cstr] == state {
+	rowstring = strconv.Itoa(upRow)
+	colstring = strconv.Itoa(pointState.y)
+	if upRow >= 0 && board[rowstring][colstring] == state {
 		pointUp := &PointState{
-			key:   rstr + ":" + cstr,
+			key:   rowstring + ":" + colstring,
 			x:     upRow,
-			y:     pointState.x,
-			state: board[rstr][cstr],
+			y:     pointState.y,
+			state: board[rowstring][colstring],
 		}
 		surroundingPoints = append(surroundingPoints, pointUp)
 	}
-	rstr = strconv.Itoa(pointState.y)
-	cstr = strconv.Itoa(rightCol)
-	if rightCol <= 18 && board[rstr][cstr] == state {
+	rowstring = strconv.Itoa(pointState.x)
+	colstring = strconv.Itoa(rightCol)
+	if rightCol <= 18 && board[rowstring][colstring] == state {
 		pointRight := &PointState{
-			key:   rstr + ":" + cstr,
-			x:     pointState.y,
+			key:   rowstring + ":" + colstring,
+			x:     pointState.x,
 			y:     rightCol,
-			state: board[rstr][cstr],
+			state: board[rowstring][colstring],
 		}
 		surroundingPoints = append(surroundingPoints, pointRight)
 	}
-	rstr = strconv.Itoa(downRow)
-	cstr = strconv.Itoa(pointState.x)
-	if downRow <= 18 && board[rstr][cstr] == state {
+	rowstring = strconv.Itoa(downRow)
+	colstring = strconv.Itoa(pointState.y)
+	if downRow <= 18 && board[rowstring][colstring] == state {
 		pointDown := &PointState{
-			key:   rstr + ":" + cstr,
+			key:   rowstring + ":" + colstring,
 			x:     downRow,
-			y:     pointState.x,
-			state: board[rstr][cstr],
+			y:     pointState.y,
+			state: board[rowstring][colstring],
 		}
 		surroundingPoints = append(surroundingPoints, pointDown)
 	}
 
-	return surroundingPoints
-}
-
-func removeWholeThing(pointsMap map[string]bool, board map[string]map[string]string) map[string]map[string]string {
-	for point, _ := range pointsMap {
-		coordinates := strings.Split(point, ":")
-		board[coordinates[0]][coordinates[1]] = "e"
+	var loggablePoints []string
+	for _, x := range surroundingPoints {
+		loggablePoints = append(loggablePoints, x.key)
 	}
-	return board
+	log.Printf("surrounding points for state %v %v", state, loggablePoints)
+	return surroundingPoints
 }
 
 func wholeThinghasNoLiberties(sp *PointState, board map[string]map[string]string) (bool, map[string]bool) {
 	checkedPoints := map[string]bool{}
 	hasNoLiberties := true
 
-	pointsOfThisColor := append([]*PointState{sp}, getSurroundingPoints(sp, board, sp.state)...)
+	pointsOfThisColor := []*PointState{}
+	pointsOfThisColor = append(pointsOfThisColor, sp)
+	pointsOfThisColor = append(pointsOfThisColor, getSurroundingPoints(sp, board, sp.state)...)
+
+	log.Printf("starting recursive check with ")
+
+	var loggablePoints []string
+	for _, x := range pointsOfThisColor {
+		loggablePoints = append(loggablePoints, x.key)
+	}
+	log.Printf("starting iterative search with %v", pointsOfThisColor)
 
 	for len(pointsOfThisColor) > 0 {
-		poc, pointsOfThisColor := pointsOfThisColor[0], pointsOfThisColor[:1]
+		poc := pointsOfThisColor[0] // pop off front of queue
+
+		var loggablePoints []string
+		for _, x := range pointsOfThisColor {
+			loggablePoints = append(loggablePoints, x.key)
+		}
+		log.Printf("before attempting pop %v", loggablePoints)
+
+		pointsOfThisColor = pointsOfThisColor[1:]
+
+		var loggablePoints2 []string
+		for _, x := range pointsOfThisColor {
+			loggablePoints2 = append(loggablePoints2, x.key)
+		}
+		log.Printf("afte rattempting pop, now have poc %v and remaining points %v", poc.key, loggablePoints2)
+
 		if !checkedPoints[poc.key] {
 			emptyPoints := getSurroundingPoints(poc, board, "e")
+			var loggableEPoints []string
+			for _, x := range emptyPoints {
+				loggableEPoints = append(loggableEPoints, x.key)
+			}
+			log.Printf("found empty points %v", loggableEPoints)
+
 			if len(emptyPoints) > 0 {
 				hasNoLiberties = false
-				break
+				return hasNoLiberties, checkedPoints
 			}
 			checkedPoints[poc.key] = true
 			pointsOfThisColor = append(pointsOfThisColor, getSurroundingPoints(poc, board, sp.state)...)
@@ -132,6 +189,14 @@ func wholeThinghasNoLiberties(sp *PointState, board map[string]map[string]string
 
 	}
 	return hasNoLiberties, checkedPoints
+}
+
+func removeWholeThing(pointsMap map[string]bool, board map[string]map[string]string) map[string]map[string]string {
+	for point := range pointsMap {
+		coordinates := strings.Split(point, ":")
+		board[coordinates[0]][coordinates[1]] = "e"
+	}
+	return board
 }
 
 func oppositeOf(playerColor string) string {

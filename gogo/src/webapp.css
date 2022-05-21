@@ -60,7 +60,6 @@
 #playing-area {
   display: flex;
   flex-wrap: wrap;
-  height: 100%;
   width: 100%;
   border: 2px solid transparent;
   z-index: 2;
@@ -127,6 +126,12 @@
   background-position: center;
 }
 
+.dot {
+  background: url('img/dotsquare.png');
+  background-size: contain;
+  background-position: center;
+}
+
 .playing-square {
   width: 5.26%;
   height: 5.26%;
@@ -166,4 +171,14 @@
 
 .board-myturn {
   border: 5px solid lime;
+}
+
+.board-b {
+  border-top: 5px solid black;
+  border-bottom: 5px solid black;
+}
+
+.board-w {
+  border-top: 5px solid white;
+  border-bottom: 5px solid white;
 }

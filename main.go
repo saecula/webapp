@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/websocket"
+	gp "github.com/webapp/gameplay"
 )
 
 type Move string
@@ -75,18 +76,19 @@ func getTitle(r *http.Request) (string, error) {
 	return title, nil
 }
 
-func calcGame(tm *Turn) (*GameState, error) {
-	prevGame, _ := loadGame(tm.GameId)
-	log.Printf("prev game %v", prevGame.Id)
-	if prevGame == nil {
-		return &GameState{}, nil
+func calcGame(tm *Turn) (*GameState, bool) {
+	prevGame, err := loadGame(tm.GameId)
+	if err != nil {
+		log.Fatal("couldnt load game")
 	}
+	log.Printf("loaded game %v", prevGame)
 
 	var started bool
 	newPlayers := prevGame.Players
 	if tm.Move == Switch {
 		if prevGame.Started == true {
-			return nil, errors.New("invalid switch!")
+			log.Println("invalid switch attempt")
+			return prevGame, false
 		}
 		newPlayers = &PlayerMap{
 			B: prevGame.Players.W,
@@ -105,7 +107,7 @@ func calcGame(tm *Turn) (*GameState, error) {
 	}
 
 	var nextPlayer string
-	if tm.FinishedTurn == false {
+	if !tm.FinishedTurn {
 		nextPlayer = tm.Player
 	} else if tm.Move != Switch {
 		if tm.Color == "b" {
@@ -118,33 +120,38 @@ func calcGame(tm *Turn) (*GameState, error) {
 	valid := true
 	newBoard := tm.BoardTemp
 	if tm.Move == Play {
-		valid, newBoard = HandleStonePlay(tm.Point, tm.Color, tm.BoardTemp)
+		valid, newBoard = gp.HandleStonePlay(tm.Point, tm.Color, tm.BoardTemp)
 	}
 
 	if !valid {
-		return nil, errors.New("not a valid move")
+		fmt.Println("not valid alas")
+		return prevGame, false
+	} else {
+		return &GameState{
+			Id:         prevGame.Id,
+			Board:      newBoard,
+			LastPlayed: tm.Point,
+			NextPlayer: nextPlayer,
+			Players:    newPlayers,
+			Started:    started,
+			Ended:      ended,
+			Winner:     "",
+		}, true
 	}
-
-	return &GameState{
-		Id:         prevGame.Id,
-		Board:      newBoard,
-		LastPlayed: tm.Point,
-		NextPlayer: nextPlayer,
-		Players:    newPlayers,
-		Started:    started,
-		Ended:      ended,
-		Winner:     "",
-	}, nil
 }
 
 func (g *GameState) save() error {
-	filename := "db/" + g.Id + ".json"
-	v, err := json.Marshal(g)
-	if err != nil {
-		log.Fatal(err)
-		return err
+	log.Printf("ummmmm %v", g)
+	if g.Id != "" {
+		filename := "db/" + g.Id + ".json"
+		v, err := json.Marshal(g)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+		return ioutil.WriteFile(filename, v, 0600)
 	}
-	return ioutil.WriteFile(filename, v, 0600)
+	return nil
 }
 
 func loadGame(id string) (*GameState, error) {
@@ -157,6 +164,9 @@ func loadGame(id string) (*GameState, error) {
 	}
 	var g *GameState
 	err = json.Unmarshal(body, &g)
+	if g == nil { // not sure this is right way to check
+		return nil, errors.New("couldn't find game")
+	}
 	return g, nil
 }
 
@@ -195,10 +205,12 @@ func handleMessages() {
 	for {
 		turnmsg := <-broadcast
 		log.Printf("received message: %v", turnmsg)
-		game, err := calcGame(&turnmsg) // screw game msg for now
-		game.save()
-		if err != nil {
-			log.Fatal("invalid move submitted")
+		game, turnWasValid := calcGame(&turnmsg) // screw game msg for now
+		if !turnWasValid {
+			log.Println("invalid move submitted")
+			// make sure front end state comes into alignment with prev saved game state
+		} else {
+			game.save()
 		}
 		log.Printf("sending message %v", game)
 		for client := range clients {

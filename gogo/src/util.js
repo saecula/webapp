@@ -42,12 +42,27 @@ export const calcSide = (rowNum, colNum) => {
       ? "bottomleft"
       : side;
 
+  side =
+    (rowNum === 3 && colNum === 3) ||
+    (rowNum === 15 && colNum === 15) ||
+    (rowNum === 3 && colNum === 15) ||
+    (rowNum === 15 && colNum === 3) ||
+    (rowNum === 9 && colNum === 3) ||
+    (rowNum === 3 && colNum === 9) ||
+    (rowNum === 9 && colNum === 9) ||
+    (rowNum == 15 && colNum === 9) ||
+    (rowNum == 9 && colNum === 15)
+      ? "dot"
+      : side;
+
   return side;
 };
 
 export const removeLastPlayed = (gameState, stoneLocation) => {
-  const [row, col] = stoneLocation.split(":");
-  gameState[row][col] = "e";
+  if (stoneLocation) {
+    const [row, col] = stoneLocation.split(":");
+    gameState[row][col] = "e";
+  }
   return gameState;
 };
 

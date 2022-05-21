@@ -117,7 +117,9 @@ const Board = ({ socket, playerName, gameData }) => {
     <div>
       <div
         id="board-container"
-        className={`board-${finishedTurn ? "notmyturn" : "myturn"}`}
+        className={`board-${
+          finishedTurn ? "notmyturn" : "myturn"
+        } board-${ourStone}`}
       >
         <div id="playing-area">
           {boardTemplate.map((rows, y) =>
