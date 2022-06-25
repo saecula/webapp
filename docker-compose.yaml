@@ -6,7 +6,7 @@ services:
       context: ./
     ports:
       - "4000:4000"
-  svelte:
+  client:
     build:
       dockerfile: Dockerfile
       context: ./gogo

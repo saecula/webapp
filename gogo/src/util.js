@@ -44,14 +44,14 @@ export const calcSide = (rowNum, colNum) => {
 
   side =
     (rowNum === 3 && colNum === 3) ||
-    (rowNum === 15 && colNum === 15) ||
-    (rowNum === 3 && colNum === 15) ||
-    (rowNum === 15 && colNum === 3) ||
-    (rowNum === 9 && colNum === 3) ||
     (rowNum === 3 && colNum === 9) ||
+    (rowNum === 3 && colNum === 15) ||
+    (rowNum === 9 && colNum === 3) ||
     (rowNum === 9 && colNum === 9) ||
-    (rowNum == 15 && colNum === 9) ||
-    (rowNum == 9 && colNum === 15)
+    (rowNum === 9 && colNum === 15) ||
+    (rowNum === 15 && colNum === 3) ||
+    (rowNum === 15 && colNum === 9) ||
+    (rowNum === 15 && colNum === 15)
       ? "dot"
       : side;
 
