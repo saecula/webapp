@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import Board from "./Board";
-import { PLAYER_NAME_LOCALSTORAGE, SERVER_URL } from "./constants";
+import { PLAYER_NAME_LOCALSTORAGE } from "./constants";
 import { getPlayerNames } from "./util";
 import WhoAreUModal from "./WhoAreUModal";
 import ErrorModal from "./ErrorModal";
@@ -25,7 +25,7 @@ const Webapp = () => {
   const loadGameState = useCallback(async () => {
     const id = window.location?.pathname?.slice(1);
     try {
-      const { data } = await axios.get(SERVER_URL, id && { params: { id } });
+      const { data } = await axios.get('/', id && { params: { id } });
       // determine if t sdhat id is valid on backend
       // if not send back 404...see how axios sends it
       // if on brand new game, be able to auto populate stored name
@@ -41,7 +41,7 @@ const Webapp = () => {
   }, [setPlayerName, setGameData, setIsLoaded, setFetchError]);
 
   const initSocket = useCallback(() => {
-    const s = new WebSocket(`ws://localhost:4000/ws`);
+    const s = new WebSocket('/ws');
     s.addEventListener("message", function ({ data }) {
       const parsedData = JSON.parse(data);
       console.log("got game data on ssocket:", parsedData);
