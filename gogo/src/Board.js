@@ -8,7 +8,7 @@ import {
   removeLastPlayed,
 } from "./util";
 import { states, moves } from "./constants";
-import { PassButton, ResignButton } from "./Buttons";
+import { PassButton, ResignButton, SwitchButton } from "./Buttons";
 import "./webapp.css";
 
 const [initBoard, boardTemplate] = makeBoard();
@@ -76,10 +76,7 @@ const Board = ({ socket, playerName, gameData }) => {
     target: { id: selectedLocation },
     detail: numClicks,
   }) => {
-    if (finishedTurn) {
-      console.log("not my turn.");
-      return;
-    }
+    if (finishedTurn) return;
     const [newBoard, newStoneLocation, isFinished] = calculateLocalMove(
       gameState,
       stoneLocation,
@@ -114,9 +111,11 @@ const Board = ({ socket, playerName, gameData }) => {
   };
 
   return (
-    <div>
+    <div
+      style={{ display: "flex", justifyContent: "space-evenly", width: "100%" }}
+    >
       <div
-        id="board-container"
+        id="board"
         className={`board-${
           finishedTurn ? "notmyturn" : "myturn"
         } board-${ourStone}`}
@@ -129,8 +128,12 @@ const Board = ({ socket, playerName, gameData }) => {
                 id={y + ":" + x}
                 className={`playing-square 
                 ${calcSide(y, x)} 
-                ${gameState[y][x]} ${
-                  stoneLocation === y + ":" + x && "selected"
+                ${
+                  gameState && gameState[y] && gameState[y][x] !== "e"
+                    ? "stone"
+                    : ""
+                } ${gameState && gameState[y] && gameState[y][x]}${
+                  stoneLocation === y + ":" + x ? "-selected" : "-unselected"
                 }`}
                 onClick={setStone}
               />
@@ -138,7 +141,14 @@ const Board = ({ socket, playerName, gameData }) => {
           )}
         </div>
       </div>
-      <PassButton onPass={onPass} disabled={finishedTurn} />
+      <div style={{ display: "flex", flexDirection: "column", width: "30%" }}>
+        <div className="button-container" style={{height: '30%'}}>
+          <PassButton onPass={onPass} disabled={finishedTurn} />
+          <ResignButton onResign={() => console.log("resign clicked.")} />
+        </div>
+        <div className="empty" />
+        <div className="stonecup"><div className={`${ourStone}-stonesincup`}/></div>
+      </div>
     </div>
   );
 };

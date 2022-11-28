@@ -123,8 +123,8 @@ export const calculateLocalMove = (
 };
 
 export const getStoneColor = (retrievedGame, playerName) => {
-  const { b } = retrievedGame.players;
-  return b === playerName ? states.BLACK : states.WHITE;
+  const players = retrievedGame?.players;
+  return players && players.b === playerName ? states.BLACK : states.WHITE;
 };
 
 export const getPlayerNames = (gameData) =>

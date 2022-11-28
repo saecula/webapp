@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -254,7 +255,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request, game string) {
 }
 
 func serveNewGame(w http.ResponseWriter) {
-	gb, err := ioutil.ReadFile("db/theonlygame.json")
+	gb, err := ioutil.ReadFile("db/newgame.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -282,7 +283,15 @@ func main() {
 	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()
 
-	log.Fatal(http.ListenAndServe(":4000", nil))
+	os := runtime.GOOS
+	isLocal := os == "darwin"
+
+	if (isLocal) {
+		// skip connection dialog
+		log.Fatal(http.ListenAndServe("localhost:4000", nil))
+	} else {
+		log.Fatal(http.ListenAndServe(":4000", nil))
+	}
 }
 
 /***/

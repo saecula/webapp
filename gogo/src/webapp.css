@@ -50,7 +50,7 @@
   margin: 1em;
 }
 
-#board-container {
+#board {
   width: 94vh;
   height: 94vh;
   display: flex;
@@ -137,49 +137,108 @@
   height: 5.26%;
 }
 
-.b {
+.stone {
+  border-radius: 50%;
+}
+
+.b-unselected {
   background: black;
-  border-radius: 50%;
-  width: 4.81%;
-  height: 4.81%;
-  border: 2px solid #3e1b00;
 }
 
-.w {
+.w-unselected {
   background: white;
+}
+
+.b-selected {
+  background: black;
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 1);
+  animation: bpulse 2s infinite;
+}
+
+.w-selected {
+  background: white;
+  box-shadow: 0 0 0 0 rgb(255, 255, 255);
+  animation: wpulse 2s infinite;
+}
+
+@keyframes bpulse {
+  0% {
+    
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+@keyframes wpulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+.button {
+    width: 90%;
+    aspect-ratio: 4/1;
+    margin: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff38;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.stonecup {
+  background-color: #dba520;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
-  width: 4.81%;
-  height: 4.81%;
-  border: 2px solid #3e1b00;
+  margin: auto;
+  display: flex;
 }
 
-.selected {
-  border: 2px solid lime !important;
+.w-stonesincup {
+  width: 90%;
+  margin: auto;
+  border-radius: 50%;
+  background-size: cover;
+  height: 90%;
+  background-image: url(whitestones.png);
 }
 
-.pass-button {
-  width: 50px;
-  height: 50px;
-  position: absolute;
-  right: 20px;
-  top: 0px;
-  z-index: 4;
+.b-stonesincup {
+  width: 90%;
+  margin: auto;
+  border-radius: 50%;
+  background-size: cover;
+  height: 90%;
+  background-image: url(bstone.png);
+}
+
+.empty {
+  flex-basis: 50%;
 }
 
 .board-notmyturn {
-  border: 5px solid magenta;
+  border: none;
 }
 
 .board-myturn {
   border: 5px solid lime;
-}
-
-.board-b {
-  border-top: 5px solid black;
-  border-bottom: 5px solid black;
-}
-
-.board-w {
-  border-top: 5px solid white;
-  border-bottom: 5px solid white;
 }

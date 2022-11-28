@@ -29,9 +29,9 @@ const Webapp = () => {
       // determine if t sdhat id is valid on backend
       // if not send back 404...see how axios sends it
       // if on brand new game, be able to auto populate stored name
-      if (!getPlayerNames(data).includes(playerName)) {
-        setPlayerName("");
-      }
+      // if (!getPlayerNames(data).includes(playerName)) {
+      //   setPlayerName("");
+      // }
       setGameData(data);
       setIsLoaded(true);
     } catch (err) {
@@ -41,17 +41,16 @@ const Webapp = () => {
   }, [setPlayerName, setGameData, setIsLoaded, setFetchError]);
 
   const initSocket = useCallback(() => {
-    const s = new WebSocket('/ws');
+    const s = new WebSocket('ws://localhost:4000/ws');
     s.addEventListener("message", function ({ data }) {
       const parsedData = JSON.parse(data);
-      console.log("got game data on ssocket:", parsedData);
+      console.log("got game data on socket:", parsedData);
       setGameData(parsedData);
     });
     setSocket(s);
   }, [setSocket]);
 
   const disconnectSocket = useCallback(() => {
-    console.log("for reals", socket);
     socket?.disconnect();
     setSocket(null);
   }, [socket, setSocket]);
