@@ -13,7 +13,6 @@ export const makeBoard = () => {
       board[i][y] = states.EMPTY;
     });
   });
-  console.log("hmmm", board);
   return [board, boardTemplate];
 };
 
