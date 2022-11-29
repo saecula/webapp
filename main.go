@@ -82,8 +82,6 @@ func calcGame(tm *Turn) (*GameState, bool) {
 	if err != nil {
 		log.Fatal("couldnt load game")
 	}
-	log.Printf("loaded game %v", prevGame)
-
 	var started bool
 	newPlayers := prevGame.Players
 	if tm.Move == Switch {
@@ -181,6 +179,8 @@ func enableCors(w *http.ResponseWriter) {
 }
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {
+	origin := r.Header.Get("Origin")
+	log.Printf("hmmmmmm %v", origin)	
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -205,7 +205,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 func handleMessages() {
 	for {
 		turnmsg := <-broadcast
-		log.Printf("received message: %v", turnmsg)
+		
 		game, turnWasValid := calcGame(&turnmsg) // screw game msg for now
 		if !turnWasValid {
 			log.Println("invalid move submitted")
@@ -213,7 +213,7 @@ func handleMessages() {
 		} else {
 			game.save()
 		}
-		log.Printf("sending message %v", game)
+		
 		for client := range clients {
 			err := client.WriteJSON(game)
 			if err != nil {
@@ -243,7 +243,9 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request, game string) {
-	fmt.Println("httping!")
+	log.Printf("httping!")
+	origin := r.Header.Get("Origin")
+	log.Printf("hmmmmmm %v", origin)
 	id := strings.TrimPrefix(r.URL.Path, "/")
 	log.Printf("hello here is url %v and id %s", r.URL, id)
 	switch id {
@@ -278,13 +280,12 @@ func serveGame(w http.ResponseWriter, id string) {
 func main() {
 	log.SetFlags(0)
 	log.Printf("hello am running :3")
-	http.HandleFunc("/", makeHandler(mainHandler))
+	// http.HandleFunc("/", makeHandler(mainHandler))
 
 	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()
 
-	os := runtime.GOOS
-	isLocal := os == "darwin"
+	isLocal := runtime.GOOS == "darwin"
 
 	if (isLocal) {
 		// skip connection dialog
