@@ -26,21 +26,12 @@ const Board = ({ socket, playerName, gameData }) => {
     if (gameData) {
       const { board, nextPlayer } = gameData;
       !godMode && setGameState(board);
-      console.log("huh", nextPlayer, playerName);
       setFinishedTurn(nextPlayer !== playerName);
       setOurStone(getStoneColor(gameData, playerName));
     }
   }, [gameData, playerName]);
 
   useEffect(() => {
-    console.log(
-      "finished turn:",
-      finishedTurn,
-      ", game unsent:",
-      !sentGame,
-      "stone location:",
-      stoneLocation
-    );
     if (connReady(socket) && finishedTurn && !sentGame) {
       socket.send(
         JSON.stringify({
@@ -103,7 +94,7 @@ const Board = ({ socket, playerName, gameData }) => {
   };
 
   return (
-    <div>
+    <div className="content-container">
       <div
         id="board"
         className={`board-${
@@ -131,8 +122,8 @@ const Board = ({ socket, playerName, gameData }) => {
           )}
         </div>
       </div>
-      <div style={{ display: "flex" }}>
-        <div className="button-container" style={{height: '30%'}}>
+      <div className="buttons-and-cup">
+        <div className="button-container">
           <PassButton onPass={onPass} disabled={finishedTurn} />
           <ResignButton onResign={() => console.log("resign clicked.")} />
         </div>
