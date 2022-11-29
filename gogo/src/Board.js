@@ -14,6 +14,7 @@ import "./webapp.css";
 const [initBoard, boardTemplate] = makeBoard();
 
 const Board = ({ socket, playerName, gameData }) => {
+  console.log('board player name', playerName)
   const [gameState, setGameState] = useState(initBoard);
   const [ourStone, setOurStone] = useState(states.BLACK);
   const [stoneLocation, setStoneLocation] = useState("");
@@ -29,7 +30,7 @@ const Board = ({ socket, playerName, gameData }) => {
       setFinishedTurn(nextPlayer !== playerName);
       setOurStone(getStoneColor(gameData, playerName));
     }
-  }, [gameData]);
+  }, [gameData, playerName]);
 
   useEffect(() => {
     console.log(
@@ -41,15 +42,6 @@ const Board = ({ socket, playerName, gameData }) => {
       stoneLocation
     );
     if (connReady(socket) && finishedTurn && !sentGame) {
-      console.log("sending game", {
-        id: "theonlygame",
-        player: playerName,
-        color: ourStone,
-        move: moves.PLAY,
-        point: stoneLocation,
-        finishedTurn,
-        boardTemp: gameState,
-      });
       socket.send(
         JSON.stringify({
           id: "theonlygame",

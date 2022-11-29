@@ -19,6 +19,10 @@ import (
 type Move string
 
 const (
+	isLocal = runtime.GOOS == "darwin"
+	allowedOrigin = "http://143.198.127.101:3000"
+
+	// moves:
 	// switch colors, only valid before first turn
 	Switch Move = "switch"
 	// play a stone
@@ -177,13 +181,26 @@ func enableCors(w *http.ResponseWriter) {
 		host = "localhost"
 	}
 	fmt.Println("host: " + host)
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+
+	if isLocal {
+		log.Printf("we are local, no prob")
+		(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	} else {
+		(*w).Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+	}
 }
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {
 	origin := r.Header.Get("Origin")
 	log.Printf("hmmmmmm %v", origin)	
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	upgrader.CheckOrigin = func(r *http.Request) bool { 
+		if isLocal {
+			log.Printf("we are local, no prob")
+			return true 
+		} else { 
+			return r.Header.Get("Origin") == allowedOrigin 
+		}
+	}
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -288,8 +305,6 @@ func main() {
 
 	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()
-
-	isLocal := runtime.GOOS == "darwin"
 
 	if (isLocal) {
 		// skip connection dialog

@@ -48,12 +48,14 @@ const Webapp = () => {
       setGameData(parsedData);
     });
     setSocket(s);
-  }, [setSocket]);
+  }, []);
 
   const disconnectSocket = useCallback(() => {
-    socket?.disconnect();
-    setSocket(null);
-  }, [socket, setSocket]);
+    if (socket) {
+      socket.disconnect();
+      setSocket(null);
+    }
+  }, [socket]);
 
   useEffect(() => {
     localStorage.setItem(PLAYER_NAME_LOCALSTORAGE, playerName);
