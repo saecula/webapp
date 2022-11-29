@@ -37,6 +37,7 @@ type Turn struct {
 	Point        string                       `json:"point"`
 	FinishedTurn bool                         `json:"finishedTurn"`
 	BoardTemp    map[string]map[string]string `json:"boardTemp"`
+	Origin       string						  `json:"origin"`
 }
 
 type GameState struct {
@@ -48,6 +49,7 @@ type GameState struct {
 	Started    bool                         `json:"started"`
 	Ended      bool                         `json:"ended"`
 	Winner     string                       `json:"winner"`
+	Origin     string						`json:"origin"`
 }
 
 type PlayerMap struct {
@@ -191,6 +193,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	clients[ws] = true
 	for {
 		var turn Turn
+		turn.Origin = origin
 		err := ws.ReadJSON(&turn)
 		if err != nil {
 			log.Printf("error in handleConnections: %#v", err)
@@ -207,6 +210,7 @@ func handleMessages() {
 		turnmsg := <-broadcast
 		
 		game, turnWasValid := calcGame(&turnmsg) // screw game msg for now
+		game.Origin = turnmsg.Origin
 		if !turnWasValid {
 			log.Println("invalid move submitted")
 			// make sure front end state comes into alignment with prev saved game state
@@ -280,7 +284,7 @@ func serveGame(w http.ResponseWriter, id string) {
 func main() {
 	log.SetFlags(0)
 	log.Printf("hello am running :3")
-	// http.HandleFunc("/", makeHandler(mainHandler))
+	http.HandleFunc("/", makeHandler(mainHandler))
 
 	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()
