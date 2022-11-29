@@ -111,9 +111,7 @@ const Board = ({ socket, playerName, gameData }) => {
   };
 
   return (
-    <div
-      style={{ display: "flex", justifyContent: "space-evenly", width: "100%" }}
-    >
+    <div>
       <div
         id="board"
         className={`board-${
@@ -141,7 +139,7 @@ const Board = ({ socket, playerName, gameData }) => {
           )}
         </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", width: "30%" }}>
+      <div style={{ display: "flex" }}>
         <div className="button-container" style={{height: '30%'}}>
           <PassButton onPass={onPass} disabled={finishedTurn} />
           <ResignButton onResign={() => console.log("resign clicked.")} />
