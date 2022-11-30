@@ -235,11 +235,11 @@ func handleMessages() {
 
 func newGameHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		ngb, err := os.ReadFile("db/newgame.json")
+		ngb, err := ioutil.ReadFile("db/newgame.json")
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = os.WriteFile("db/thefakeonlygame.json", ngb, 0600)
+		err = ioutil.WriteFile("db/thefakeonlygame.json", ngb, 0600)
 		if err != nil {
 			log.Fatal(err)
 		}
