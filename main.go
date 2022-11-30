@@ -265,7 +265,7 @@ func main() {
 		log.Printf("listening on port 4000: dev")
 		log.Fatal(http.ListenAndServe("localhost:4000", nil))
 	} else {
-		log.Printf("listening on port 4000: prod")
+		log.Printf("listening on port 4000: prod testing")
 		log.Fatal(http.ListenAndServe(":4000", nil))
 	}
 }
