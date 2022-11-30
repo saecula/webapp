@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -41,7 +40,6 @@ type Turn struct {
 	Point        string                       `json:"point"`
 	FinishedTurn bool                         `json:"finishedTurn"`
 	BoardTemp    map[string]map[string]string `json:"boardTemp"`
-	Origin       string						  `json:"origin"`
 }
 
 type GameState struct {
@@ -50,15 +48,19 @@ type GameState struct {
 	LastPlayed string                       `json:"lastPlayed"`
 	NextPlayer string                       `json:"nextPlayer"`
 	Players    *PlayerMap                   `json:"players"`
+	Points     *PointsMap					`json:"points"`
 	Started    bool                         `json:"started"`
 	Ended      bool                         `json:"ended"`
-	Winner     string                       `json:"winner"`
-	Origin     string						`json:"origin"`
 }
 
 type PlayerMap struct {
 	B string `json:"b"`
 	W string `json:"w"`
+}
+
+type PointsMap struct {
+	B int `json:"b"`
+	W int `json:"w"`
 }
 
 var GET = "GET"
@@ -70,19 +72,6 @@ var clients = make(map[*websocket.Conn]bool)
 var broadcast = make(chan Turn)
 var upgrader = websocket.Upgrader{}
 
-var validPath = regexp.MustCompile("^([a-zA-Z0-0-9-]+)$")
-
-func getTitle(r *http.Request) (string, error) {
-	title := strings.Split(r.URL.Path, "/")[1]
-	if len(title) == 0 {
-		return "", nil
-	}
-	if isValid := validPath.MatchString(title); !isValid {
-		return "", errors.New("Invalid Post Title")
-	}
-	return title, nil
-}
-
 func calcGame(tm *Turn) (*GameState, bool) {
 	prevGame, err := loadGame(tm.GameId)
 	if err != nil {
@@ -91,7 +80,7 @@ func calcGame(tm *Turn) (*GameState, bool) {
 	var started bool
 	newPlayers := prevGame.Players
 	if tm.Move == Switch {
-		if prevGame.Started == true {
+		if prevGame.Started {
 			log.Println("invalid switch attempt")
 			return prevGame, false
 		}
@@ -138,15 +127,14 @@ func calcGame(tm *Turn) (*GameState, bool) {
 			LastPlayed: tm.Point,
 			NextPlayer: nextPlayer,
 			Players:    newPlayers,
+			Points: 	prevGame.Points,
 			Started:    started,
 			Ended:      ended,
-			Winner:     "",
 		}, true
 	}
 }
 
 func (g *GameState) save() error {
-	log.Printf("ummmmm %v", g)
 	if g.Id != "" {
 		filename := "db/" + g.Id + ".json"
 		v, err := json.Marshal(g)
@@ -169,6 +157,9 @@ func loadGame(id string) (*GameState, error) {
 	}
 	var g *GameState
 	err = json.Unmarshal(body, &g)
+	if err != nil {
+		log.Fatal("error unmarshaling game")
+	}
 	if g == nil { // not sure this is right way to check
 		return nil, errors.New("couldn't find game")
 	}
@@ -191,8 +182,6 @@ func enableCors(w *http.ResponseWriter) {
 }
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {
-	origin := r.Header.Get("Origin")
-	log.Printf("hmmmmmm %v", origin)	
 	upgrader.CheckOrigin = func(r *http.Request) bool { 
 		if isLocal {
 			log.Printf("we are local, no prob")
@@ -210,7 +199,6 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	clients[ws] = true
 	for {
 		var turn Turn
-		turn.Origin = origin
 		err := ws.ReadJSON(&turn)
 		if err != nil {
 			log.Printf("error in handleConnections: %#v", err)
@@ -227,7 +215,6 @@ func handleMessages() {
 		turnmsg := <-broadcast
 		
 		game, turnWasValid := calcGame(&turnmsg) // screw game msg for now
-		game.Origin = turnmsg.Origin
 		if !turnWasValid {
 			log.Println("invalid move submitted")
 			// make sure front end state comes into alignment with prev saved game state
@@ -246,70 +233,38 @@ func handleMessages() {
 	}
 }
 
-func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+func newGameHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		ngb, err := os.ReadFile("db/newgame.json")
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = os.WriteFile("db/thefakeonlygame.json", ngb, 0600)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func makeHandler(fn func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
-		title, err := getTitle(r)
-		if err != nil {
-			w.WriteHeader(400)
-			nf, err := json.Marshal("bad request")
-			if err != nil {
-				panic(err)
-			}
-			w.Write(nf)
-			return
-		}
-		fn(w, r, title)
+		fn(w, r)
 	}
-}
-
-func mainHandler(w http.ResponseWriter, r *http.Request, game string) {
-	log.Printf("httping!")
-	origin := r.Header.Get("Origin")
-	log.Printf("hmmmmmm %v", origin)
-	id := strings.TrimPrefix(r.URL.Path, "/")
-	log.Printf("hello here is url %v and id %s", r.URL, id)
-	switch id {
-	case "":
-		serveNewGame(w)
-	default:
-		serveGame(w, id)
-	}
-}
-
-func serveNewGame(w http.ResponseWriter) {
-	gb, err := ioutil.ReadFile("db/newgame.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	var g *GameState
-	if err := json.Unmarshal(gb, &g); err != nil {
-		log.Printf("goddammit")
-		log.Fatal(err)
-	}
-	log.Printf("loading new game %v", g)
-	gRes, _ := json.Marshal(&g)
-	w.WriteHeader(201)
-	w.Write(gRes)
-	return
-}
-
-func serveGame(w http.ResponseWriter, id string) {
-	log.Print("not serving id game for now")
 }
 
 func main() {
 	log.SetFlags(0)
-	log.Printf("hello am running :3")
-	http.HandleFunc("/", makeHandler(mainHandler))
-
+	http.HandleFunc("/newgame", makeHandler(newGameHandler))
 	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()
 
 	if (isLocal) {
 		// skip connection dialog
+		log.Printf("listening on port 4000: dev")
 		log.Fatal(http.ListenAndServe("localhost:4000", nil))
 	} else {
+		log.Printf("listening on port 4000: prod")
 		log.Fatal(http.ListenAndServe(":4000", nil))
 	}
 }

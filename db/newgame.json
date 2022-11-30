@@ -403,7 +403,7 @@
   },
   "nextPlayer": "kathleen",
   "players": { "b": "kathleen", "w": "james" },
-  "started": true,
-  "ended": false,
-  "winner": ""
+  "points": { "b": 0, "w": 0},
+  "started": false,
+  "ended": false
 }
