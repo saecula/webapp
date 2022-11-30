@@ -182,6 +182,7 @@ func enableCors(w *http.ResponseWriter) {
 }
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {
+	log.Printf("checking origin %s", r.Header.Get("Origin"))
 	upgrader.CheckOrigin = func(r *http.Request) bool { 
 		if isLocal {
 			log.Printf("we are local, no prob")

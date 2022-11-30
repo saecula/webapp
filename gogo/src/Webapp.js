@@ -41,7 +41,7 @@ const Webapp = () => {
   }, [setPlayerName, setGameData, setIsLoaded, setFetchError]);
 
   const initSocket = useCallback(() => {
-    const s = new WebSocket("ws://143.198.127.101//ws");
+    const s = new WebSocket("ws://143.198.127.101:4000/ws");
     s.addEventListener("message", function ({ data }) {
       const parsedData = JSON.parse(data);
       console.log("got game data on socket:", parsedData);
