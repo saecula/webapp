@@ -27,7 +27,10 @@ const Webapp = () => {
   const loadGameState = useCallback(async () => {
     const id = window.location?.pathname?.slice(1);
     try {
-      const { data } = await axios.get('http://localhost:4000/', id && { params: { id } });
+      const { data } = await axios.get(
+        "http://143.198.127.101:4000/",
+        id && { params: { id } }
+      );
       setGameData(data);
     } catch (err) {
       console.error("Errors loading game state", err);
@@ -48,7 +51,7 @@ const Webapp = () => {
 }, [gameData])
 
   const initSocket = useCallback(() => {
-    const s = new WebSocket("ws://localhost:4000/ws");//("ws://143.198.127.101:4000/ws");
+    const s = new WebSocket("ws://143.198.127.101:4000/ws");
     s.addEventListener("message", function ({ data }) {
       const parsedData = JSON.parse(data);
       console.log("got game data on socket:", parsedData);
@@ -115,7 +118,9 @@ const Webapp = () => {
                 </div>
                 <button
                   style={{ width: "200px", margin: "auto" }}
-                  onClick={() => axios.post("http://localhost:4000/newgame")}
+                  onClick={() =>
+                    axios.post("http://143.198.127.101:4000/newgame")
+                  }
                 >
                   new game
                 </button>
