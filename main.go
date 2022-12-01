@@ -89,6 +89,8 @@ func calcGame(tm *Turn) (*GameState, bool) {
 	}
 
 	players := prevGame.Players
+	var nextPlayer string
+
 	if tm.Move == Switch {
 		if prevGame.Started {
 			log.Println("invalid switch attempt")
@@ -98,6 +100,7 @@ func calcGame(tm *Turn) (*GameState, bool) {
 			B: prevGame.Players.W,
 			W: prevGame.Players.B,
 		}
+		nextPlayer = players.B
 	} else if tm.Move == Name {
 		if tm.Color == "w" && players.W == "" {
 			players.W = tm.Player
@@ -111,8 +114,7 @@ func calcGame(tm *Turn) (*GameState, bool) {
 			valid = false
 		}
 	}
-
-	var nextPlayer string
+	
 	if !tm.FinishedTurn {
 		nextPlayer = tm.Player
 	} else if tm.Move != Switch {
@@ -123,7 +125,7 @@ func calcGame(tm *Turn) (*GameState, bool) {
 		}
 	}
 
-	newBoard := tm.BoardTemp
+	newBoard := prevGame.Board
 	if tm.Move == Play {
 		started = true
 		valid, newBoard = HandleStonePlay(tm.Point, tm.Color, tm.BoardTemp)

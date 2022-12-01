@@ -28,13 +28,6 @@ const Webapp = () => {
     const id = window.location?.pathname?.slice(1);
     try {
       const { data } = await axios.get('http://localhost:4000/', id && { params: { id } });
-      // determine if t sdhat id is valid on backend
-      // if not send back 404...see how axios sends it
-      // if on brand new game, be able to auto populate stored name
-      // if (!getPlayerNames(data).includes(playerName)) {
-      //   setPlayerName("");
-      // }
-      console.log('data???', data)
       setGameData(data);
     } catch (err) {
       console.error("Errors loading game state", err);
@@ -43,13 +36,15 @@ const Webapp = () => {
   }, []);
 
   useEffect(() => {
+    console.log("gamedata", gameData); 
     if (!loaded && Object.keys(gameData).length > 1) { 
-    console.log('gamedata', gameData); 
+    console.log('gamedata', gameData);
+    setIsLoaded(true);  
   }
   if (!waitingForPlayer2 && getPlayerNames(gameData).includes(playerName) && getPlayerNames(gameData).length < 2) {
     setWaitingForPlayer2(true);
   }
-  setIsLoaded(true); 
+  
 }, [gameData])
 
   const initSocket = useCallback(() => {
@@ -85,7 +80,7 @@ const Webapp = () => {
             move: moves.NAME,
             point: "",
             finishedTurn: true,
-            boardTemp: {},
+            boardTemp: gameData.board,
           })
         );
       }
@@ -115,7 +110,9 @@ const Webapp = () => {
           >
             <div className="modal-container">
               <div className="modal">
-                <div style={{ margin: "auto" }}>halo</div>
+                <div style={{ margin: "auto" }}>
+                  <div>done.</div> <div>start a new game?</div>
+                </div>
                 <button
                   style={{ width: "200px", margin: "auto" }}
                   onClick={() => axios.post("http://localhost:4000/newgame")}
@@ -130,12 +127,19 @@ const Webapp = () => {
         {loaded && !getPlayerNames(gameData).includes(playerName) && (
           <WhoAreUModal
             loaded={loaded}
+            playerName={playerName}
             playerNames={getPlayerNames(gameData)}
             setPlayerName={onSubmitName}
           />
         )}
         {getPlayerNames(gameData).includes(playerName) &&
-          getPlayerNames(gameData).length == 1 && <Waiting />}
+          getPlayerNames(gameData).length == 1 && (
+            <div className="modal-container">
+              <div className="modal">
+                <div style={{ margin: "auto" }}>Waiting for partner...</div>
+              </div>
+            </div>
+          )}
         <Board
           socket={socket}
           playerName={playerName}
@@ -147,14 +151,5 @@ const Webapp = () => {
     </div>
   );
 };
-
-const Waiting = () =>       ( 
-  <div className="modal-container">
-              <div className="modal">
-                <div style={{ margin: "auto" }}>Waiting for partner...</div>
-              </div>
-            </div>
-  )
-
 
 export default Webapp;

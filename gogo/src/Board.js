@@ -108,15 +108,31 @@ const Board = ({ socket, playerName, gameData, ourStone, setOurStone }) => {
             move: moves.RESIGN,
             point: "",
             finishedTurn: true,
-            boardTemp: board,
+            boardTemp:  null,
           })
         );
       }
     };
 
+        const onSwitch = () => {
+          if (connReady(socket)) {
+            socket.send(
+              JSON.stringify({
+                id: "theonlygame",
+                player: playerName,
+                color: ourStone,
+                move: moves.SWITCH,
+                point: "",
+                finishedTurn: true,
+                boardTemp: null,
+              })
+            );
+          }
+        };
+
   return (
     <div className="content-container">
-      <div className="buttons-and-cup"/>
+      <div className="buttons-and-cup" />
       <div
         id="board"
         className={`board-${
@@ -150,7 +166,10 @@ const Board = ({ socket, playerName, gameData, ourStone, setOurStone }) => {
           <ResignButton onResign={onResign} />
         </div>
         <div className="empty" />
-        <div className="stonecup">
+        <div
+          className={`stonecup ${!gameData.started ? "switchable" : ""}`}
+          onClick={onSwitch}
+        >
           <div className={`${ourStone}-stonesincup`} />
         </div>
       </div>

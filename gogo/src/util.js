@@ -84,6 +84,9 @@ export const calculateLocalMove = (
     oldRow = oldLocation.split(":")[0];
     oldCol = oldLocation.split(":")[1];
   }
+  if (!gameState || !gameState[0] || !gameState[0][0]) {
+    throw new Error('where did the board go?')
+  }
   const prevPointState = gameState[curRow][curCol];
 
   if (godMode) {

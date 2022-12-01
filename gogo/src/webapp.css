@@ -169,6 +169,22 @@
   animation: wpulse 2s infinite;
 }
 
+@keyframes lpulse {
+  0% {
+
+    box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(0, 255, 0, 0)
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 0, 0);
+  }
+}
+
 @keyframes bpulse {
   0% {
     
@@ -210,6 +226,12 @@
     background-color: #ffffff38;
     border-radius: 4px;
     cursor: pointer;
+    z-index: 2;
+}
+
+.button-disabled {
+    background-color: #ffffff18;
+    cursor: default;
 }
 
 .content-container {
@@ -218,7 +240,6 @@
 
 .buttons-and-cup {
   display: flex;
-  width: auto;
 }
 
 .button-container {
@@ -242,6 +263,10 @@
   .button {
     width: inherit;
   }
+  .empty {
+    flex-basis: 50%;
+  }
+
 }
 
 .stonecup {
@@ -252,6 +277,12 @@
   margin: auto;
   display: flex;
   aspect-ratio: 1/.5;
+}
+
+.switchable {
+  cursor: pointer;
+  box-shadow: 0 0 0 0 rgb(0, 255, 0);
+  animation: wpulse 2s infinite;
 }
 
 .w-stonesincup {
@@ -272,8 +303,8 @@
   background-image: url(bstone.png);
 }
 
-.empty {
-  flex-basis: 50%;
+.empty  {
+  width: 50%;
 }
 
 .board-notmyturn {

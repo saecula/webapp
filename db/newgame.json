@@ -401,7 +401,8 @@
       "9": "e"
     }
   },
-  "points": { "b": 0, "w": 0},
+  "points": { "b": 0, "w": 0 },
+  "players": { "b": "", "w": "" },
   "started": false,
   "ended": false
 }

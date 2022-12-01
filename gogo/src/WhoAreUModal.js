@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import { validateNameInput, getColorInput } from "./util";
 import "./webapp.css";
 
-const WhoAreUModal = ({ loaded, playerNames, setPlayerName }) => {
+const WhoAreUModal = ({ loaded, playerNames, playerName, setPlayerName }) => {
   const [showNameInput, setShowNameInput] = useState(false);
 
   useEffect(() => {
@@ -57,6 +57,7 @@ const WhoAreUModal = ({ loaded, playerNames, setPlayerName }) => {
                     type="text"
                     className="modal-input"
                     name={"newPlayer"}
+                    defaultValue={playerName}
                   />
                 </div>
                 {playerNames.length < 1 && (
