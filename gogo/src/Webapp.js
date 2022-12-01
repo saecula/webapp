@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import Board from "./Board";
-import { PLAYER_NAME_LOCALSTORAGE } from "./constants";
-import { getPlayerNames } from "./util";
+import { PLAYER_NAME_LOCALSTORAGE, moves, states } from "./constants";
+import { getPlayerNames, connReady } from "./util";
 import WhoAreUModal from "./WhoAreUModal";
 import ErrorModal from "./ErrorModal";
 import "./webapp.css";
@@ -10,6 +10,7 @@ import "./webapp.css";
 const Webapp = () => {
   const [socket, setSocket] = useState(undefined);
   const [gameData, setGameData] = useState(null);
+  const [ourStone, setOurStone] = useState(states.BLACK);
   const [loaded, setIsLoaded] = useState(false);
   const [playerName, setPlayerName] = useState(
     localStorage.getItem(PLAYER_NAME_LOCALSTORAGE)
@@ -38,10 +39,10 @@ const Webapp = () => {
       console.error("Errors loading game state", err);
       setFetchError(err);
     }
-  }, [setPlayerName, setGameData, setIsLoaded, setFetchError]);
+  }, []);
 
   const initSocket = useCallback(() => {
-    const s = new WebSocket("ws://143.198.127.101:4000/ws");
+    const s = new WebSocket("ws://localhost:4000/ws");//("ws://143.198.127.101:4000/ws");
     s.addEventListener("message", function ({ data }) {
       const parsedData = JSON.parse(data);
       console.log("got game data on socket:", parsedData);
@@ -52,10 +53,34 @@ const Webapp = () => {
 
   const disconnectSocket = useCallback(() => {
     if (socket) {
+      console.log('wtf socket?', socket)
       socket.disconnect();
       setSocket(null);
     }
   }, [socket]);
+
+  const onSubmitName = useCallback(
+    (name, color) => {
+      setPlayerName(name);
+      if (color) setOurStone(color)
+      console.log("sending?", socket, connReady(socket));
+      if (connReady(socket)) {
+        console.log("sending");
+        socket.send(
+          JSON.stringify({
+            id: "theonlygame",
+            player: name,
+            color,
+            move: moves.NAME,
+            point: "",
+            finishedTurn: true,
+            boardTemp: {},
+          })
+        );
+      }
+    },
+    [socket]
+  );
 
   useEffect(() => {
     localStorage.setItem(PLAYER_NAME_LOCALSTORAGE, playerName);
@@ -64,15 +89,40 @@ const Webapp = () => {
   return (
     <div className="webapp">
       <header className="webapp-header">
+        {gameData?.ended && (
+          <div
+            style={{
+              position: "absolute",
+              height: "200vh",
+              width: "200vw",
+              top: 0,
+              left: 0,
+              zIndex: 3,
+              backgroundColor: "#5d5d5d9e",
+            }}
+          >
+            <div className="modal-container">
+              <div className="modal">
+                <div style={{ margin: "auto" }}>halo</div>
+                <button
+                  style={{ width: "200px", margin: "auto" }}
+                  onClick={() => axios.post("http://localhost:4000/newgame")}
+                >
+                  new game
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {fetchError && <ErrorModal err={fetchError} />}
-        {!playerName && (
+        {!getPlayerNames(gameData).includes(playerName) && (
           <WhoAreUModal
             loaded={loaded}
             playerNames={getPlayerNames(gameData)}
-            setPlayerName={setPlayerName}
+            setPlayerName={onSubmitName}
           />
         )}
-        <Board socket={socket} playerName={playerName} gameData={gameData} />
+        <Board socket={socket} playerName={playerName} gameData={gameData} ourStone={ourStone} setOurStone={setOurStone}/>
       </header>
     </div>
   );

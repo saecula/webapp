@@ -96,7 +96,6 @@ export const calculateLocalMove = (
       },
     };
   } else if (attemptedLocation === oldLocation) {
-    console.log("numClicks....", numClicks);
     if (numClicks > 1) {
       return [newGameState, newStoneLocation, true];
     }
@@ -131,6 +130,7 @@ export const getPlayerNames = (gameData) =>
   Object.values(gameData?.players || []).filter((n) => !!n);
 
 export const validateNameInput = (e) => {
+  console.log("validate target", e);
   const input = e.target?.value || e.target[0]?.value;
   let alertMsg;
   if (!input) {
@@ -144,4 +144,15 @@ export const validateNameInput = (e) => {
     alert(alertMsg);
   }
   return input;
+};
+
+export const getColorInput = (e) => {
+  console.log("validate target", e.target[0], e.target[1].checked, e.target[2]);
+  const color1 = e.target[1];
+  const color2 = e.target[2];
+  if (color1?.checked) {
+    return color1.value
+  } else if (color2?.checked) {
+    return color2.value
+  }
 };

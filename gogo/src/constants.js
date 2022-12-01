@@ -15,4 +15,6 @@ export const moves = {
   PASS: "pass",
   // resign the game
   RESIGN: "resign",
+  // add name
+  NAME: "name",
 };

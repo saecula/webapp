@@ -30,6 +30,8 @@ const (
 	Pass Move = "pass"
 	// resign the game
 	Resign Move = "resign"
+	// name yourself
+	Name Move = "name"
 )
 
 type Turn struct {
@@ -77,27 +79,37 @@ func calcGame(tm *Turn) (*GameState, bool) {
 	if err != nil {
 		log.Fatal("couldnt load game")
 	}
-	var started bool
-	newPlayers := prevGame.Players
+	valid := true
+
+	started := prevGame.Started
+	ended := prevGame.Ended
+
+	if tm.Move == Resign {
+	ended = true
+	}
+
+	players := prevGame.Players
 	if tm.Move == Switch {
 		if prevGame.Started {
 			log.Println("invalid switch attempt")
 			return prevGame, false
 		}
-		newPlayers = &PlayerMap{
+		players = &PlayerMap{
 			B: prevGame.Players.W,
 			W: prevGame.Players.B,
 		}
-		started = false
-	} else {
-		started = true
-	}
-
-	var ended bool
-	if tm.Move == Resign {
-		ended = true
-	} else {
-		ended = false
+	} else if tm.Move == Name {
+		if tm.Color == "w" && players.W == "" {
+			players.W = tm.Player
+		} else if tm.Color == "b" && players.B == "" {
+			players.B = tm.Player
+		} else if players.W == "" && players.B != "" {
+			players.W = tm.Player
+		} else if players.B == "" && players.W != "" {
+			players.B = tm.Player
+		} else {
+			valid = false
+		}
 	}
 
 	var nextPlayer string
@@ -111,9 +123,9 @@ func calcGame(tm *Turn) (*GameState, bool) {
 		}
 	}
 
-	valid := true
 	newBoard := tm.BoardTemp
 	if tm.Move == Play {
+		started = true
 		valid, newBoard = HandleStonePlay(tm.Point, tm.Color, tm.BoardTemp)
 	}
 
@@ -126,7 +138,7 @@ func calcGame(tm *Turn) (*GameState, bool) {
 			Board:      newBoard,
 			LastPlayed: tm.Point,
 			NextPlayer: nextPlayer,
-			Players:    newPlayers,
+			Players:    players,
 			Points: 	prevGame.Points,
 			Started:    started,
 			Ended:      ended,
@@ -214,7 +226,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 func handleMessages() {
 	for {
 		turnmsg := <-broadcast
-		
+		log.Printf("got message %v", turnmsg)
 		game, turnWasValid := calcGame(&turnmsg) // screw game msg for now
 		if !turnWasValid {
 			log.Println("invalid move submitted")
@@ -240,9 +252,23 @@ func newGameHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = ioutil.WriteFile("db/thefakeonlygame.json", ngb, 0600)
+		err = ioutil.WriteFile("db/theonlygame.json", ngb, 0600)
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		g, err := loadGame("theonlygame")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for client := range clients {
+			err := client.WriteJSON(g)
+			if err != nil {
+				log.Printf("error in handleMessages: %v", err)
+				client.Close()
+				delete(clients, client)
+			}
 		}
 	}
 }

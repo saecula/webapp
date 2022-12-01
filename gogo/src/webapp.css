@@ -14,12 +14,12 @@
 }
 
 .modal-container {
-  height: 98vh;
+  height: 100vh;
   background-color: #3c3c3ca6;
-  position: absolute;
-  width: 98vw;
-  border: 10px solid fuchsia;
+  position: fixed;
+  width: 100vw;
   z-index: 3;
+  top:0;
   display: flex;
 }
 
@@ -29,7 +29,7 @@
   margin: auto;
   height: 50vh;
   width: 50vw;
-  border: 10px solid lime;
+  border: 10px solid rgb(255, 255, 255);
   justify-content: center;
   flex-direction: column;
 }
@@ -46,8 +46,14 @@
 }
 
 .modal-input {
-  font-size: .8em;
+  font-size: 1em;
+  color: rgb(60, 59, 59);
+  text-align: center;
   margin: 1em;
+  background-color: rgb(255, 255, 255);
+  border: none;
+  border-radius: 3px;
+  height: 40px;
 }
 
 #board {
@@ -211,6 +217,7 @@
 
 .buttons-and-cup {
   display: flex;
+  width: auto;
 }
 
 .button-container {
@@ -225,6 +232,7 @@
   .buttons-and-cup {
     display: flex;
     flex-direction: column;
+    width: 200px;
   }
   .button-container {
     display: block;

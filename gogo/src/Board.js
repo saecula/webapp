@@ -7,16 +7,16 @@ import {
   getStoneColor,
   removeLastPlayed,
 } from "./util";
-import { states, moves } from "./constants";
+import { moves } from "./constants";
 import { PassButton, ResignButton, SwitchButton } from "./Buttons";
 import "./webapp.css";
 
 const [initBoard, boardTemplate] = makeBoard();
 
-const Board = ({ socket, playerName, gameData }) => {
+const Board = ({ socket, playerName, gameData, ourStone, setOurStone }) => {
   console.log('board player name', playerName)
   const [gameState, setGameState] = useState(initBoard);
-  const [ourStone, setOurStone] = useState(states.BLACK);
+
   const [stoneLocation, setStoneLocation] = useState("");
   const [finishedTurn, setFinishedTurn] = useState(false);
   const [sentGame, setSentGame] = useState(false);
@@ -93,8 +93,30 @@ const Board = ({ socket, playerName, gameData }) => {
     }
   };
 
+    const onResign = () => {
+      const wants = confirm('are you sure?')
+      if (!wants) return
+
+      setFinishedTurn(true);
+      const board = removeLastPlayed(gameState, stoneLocation);
+      if (connReady(socket)) {
+        socket.send(
+          JSON.stringify({
+            id: "theonlygame",
+            player: playerName,
+            color: ourStone,
+            move: moves.RESIGN,
+            point: "",
+            finishedTurn: true,
+            boardTemp: board,
+          })
+        );
+      }
+    };
+
   return (
     <div className="content-container">
+      <div className="buttons-and-cup"/>
       <div
         id="board"
         className={`board-${
@@ -125,10 +147,12 @@ const Board = ({ socket, playerName, gameData }) => {
       <div className="buttons-and-cup">
         <div className="button-container">
           <PassButton onPass={onPass} disabled={finishedTurn} />
-          <ResignButton onResign={() => console.log("resign clicked.")} />
+          <ResignButton onResign={onResign} />
         </div>
         <div className="empty" />
-        <div className="stonecup"><div className={`${ourStone}-stonesincup`}/></div>
+        <div className="stonecup">
+          <div className={`${ourStone}-stonesincup`} />
+        </div>
       </div>
     </div>
   );

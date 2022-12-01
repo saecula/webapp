@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { validateNameInput } from "./util";
+import { validateNameInput, getColorInput } from "./util";
 import "./webapp.css";
 
 const WhoAreUModal = ({ loaded, playerNames, setPlayerName }) => {
@@ -9,16 +9,19 @@ const WhoAreUModal = ({ loaded, playerNames, setPlayerName }) => {
     loaded && setShowNameInput(playerNames.length < 2);
   }, [playerNames]);
 
-  console.log("shownamein", showNameInput);
-  const handleSubmit = useCallback((e) => {
-    console.log("here", e);
-    e.preventDefault();
-    const input = validateNameInput(e, playerNames);
-    if (input) {
-      console.log("name set:", input);
-      setPlayerName(input);
-    }
-  }, []);
+  const handleSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+      const name = validateNameInput(e, playerNames);
+      const color = getColorInput(e)
+      if (name) {
+        console.log("name set:", name);
+        setPlayerName(name, color);
+      }
+    },
+    [setPlayerName]
+  );
+  
   console.log("pnames", playerNames.length);
   return (
     <div className="modal-container">
@@ -29,11 +32,10 @@ const WhoAreUModal = ({ loaded, playerNames, setPlayerName }) => {
               display: "flex",
               flexDirection: "column",
               padding: "10px",
-              textAlign: "left",
               margin: "auto",
             }}
           >
-            <div style={{ padding: "10px" }}> who are u?</div>
+            <div style={{ padding: "10px", margin: "auto" }}> who are u?</div>
             {playerNames.map((pn) => (
               <button
                 id={pn}
@@ -51,8 +53,33 @@ const WhoAreUModal = ({ loaded, playerNames, setPlayerName }) => {
             ))}
             {showNameInput && (
               <form onSubmit={handleSubmit}>
-                <input type="text" className="modal-input" name={"newPlayer"} />
-                <input type="submit" style={{ display: "none" }} />
+                <div>
+                  <input
+                    type="text"
+                    className="modal-input"
+                    name={"newPlayer"}
+  
+                  />
+                </div>
+                {playerNames.length < 1 && (
+                  <div>
+                    <input
+                      type="radio"
+                      id="black-radio"
+                      name="white"
+                      value="b"
+                    />
+                    <label for="black-radio">black</label>
+                    <input
+                      type="radio"
+                      id="white-radio"
+                      name="black"
+                      value="w"
+                    />
+                    <label for="white-radio">white</label>
+                  </div>
+                )}
+                <input type="submit" style={{width: '200px', height: '50px', margin: '50px'}}/>
               </form>
             )}
           </div>

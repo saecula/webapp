@@ -401,8 +401,6 @@
       "9": "e"
     }
   },
-  "nextPlayer": "kathleen",
-  "players": { "b": "kathleen", "w": "james" },
   "points": { "b": 0, "w": 0},
   "started": false,
   "ended": false
