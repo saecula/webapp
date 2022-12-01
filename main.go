@@ -273,6 +273,17 @@ func newGameHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func mainHandler(w http.ResponseWriter, r *http.Request) {
+	g, err := loadGame("theonlygame")
+	if err != nil {
+		log.Fatal(err)
+	}
+	gRes, _ := json.Marshal(&g)
+	w.WriteHeader(201)
+	w.Write(gRes)
+	return
+}
+
 func makeHandler(fn func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
@@ -282,6 +293,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 
 func main() {
 	log.SetFlags(0)
+	http.HandleFunc("/", makeHandler(mainHandler))
 	http.HandleFunc("/newgame", makeHandler(newGameHandler))
 	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()

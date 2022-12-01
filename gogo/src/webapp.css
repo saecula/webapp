@@ -54,14 +54,15 @@
   border: none;
   border-radius: 3px;
   height: 40px;
+  margin-bottom:50px;
 }
 
 #board {
   width: 94vh;
   height: 94vh;
   display: flex;
-  background-color: transparent;
   margin: 15px;
+  padding: 8px;
 }
 
 #playing-area {
@@ -276,9 +277,77 @@
 }
 
 .board-notmyturn {
-  border: none;
+  background-color: transparent;
 }
 
 .board-myturn {
-  border: 5px solid lime;
+  background-color: lime;
+}
+
+:root {
+  --radio-color: lime;
+}
+
+.radio {
+  font-family: system-ui, sans-serif;
+  font-size: 2rem;
+  font-weight: bold;
+  line-height: 1.1;
+  display: grid;
+  grid-template-columns: 1em auto;
+  gap: 0.5em;
+}
+
+.submit-btn {
+    font-family: system-ui, sans-serif;
+      font-size: 1em;
+      font-weight: bold;
+      background-color: lime;
+      line-height: 1.1;
+      color: rgb(58, 58, 58);
+      height: 40px;
+      width: 275px;
+      border: none;
+      border-radius: 3px;
+      margin: 50px;
+}
+
+input[type="radio"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  margin: 0;
+    font: inherit;
+    color: currentColor;
+    width: 2.15em;
+    height: 2.15em;
+    border: 0.15em solid currentColor;
+    border-radius: 50%;
+      display: grid;
+        place-content: center;
+}
+
+input[id="black-radio"] {
+  background-color: black;
+}
+input[id="white-radio"] {
+  background-color: white;
+}
+
+input[type="radio"]::before {
+  content: "";
+  width: 2.15em;
+  height: 2.15em;
+  border-radius: 50%;
+  transform: scale(0);
+  border: 0.15em solid lime;
+}
+
+input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+
+.radio + .radio {
+  margin-left: 2em;
+  padding-right: 2em;
 }

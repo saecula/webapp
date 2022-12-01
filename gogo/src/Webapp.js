@@ -9,13 +9,14 @@ import "./webapp.css";
 
 const Webapp = () => {
   const [socket, setSocket] = useState(undefined);
-  const [gameData, setGameData] = useState(null);
+  const [gameData, setGameData] = useState({});
   const [ourStone, setOurStone] = useState(states.BLACK);
   const [loaded, setIsLoaded] = useState(false);
   const [playerName, setPlayerName] = useState(
     localStorage.getItem(PLAYER_NAME_LOCALSTORAGE)
   );
   const [fetchError, setFetchError] = useState(null);
+  const [waitingForPlayer2, setWaitingForPlayer2] = useState(false)
 
   useEffect(() => {
     initSocket();
@@ -26,20 +27,30 @@ const Webapp = () => {
   const loadGameState = useCallback(async () => {
     const id = window.location?.pathname?.slice(1);
     try {
-      const { data } = await axios.get('/', id && { params: { id } });
+      const { data } = await axios.get('http://localhost:4000/', id && { params: { id } });
       // determine if t sdhat id is valid on backend
       // if not send back 404...see how axios sends it
       // if on brand new game, be able to auto populate stored name
       // if (!getPlayerNames(data).includes(playerName)) {
       //   setPlayerName("");
       // }
+      console.log('data???', data)
       setGameData(data);
-      setIsLoaded(true);
     } catch (err) {
       console.error("Errors loading game state", err);
       setFetchError(err);
     }
   }, []);
+
+  useEffect(() => {
+    if (!loaded && Object.keys(gameData).length > 1) { 
+    console.log('gamedata', gameData); 
+  }
+  if (!waitingForPlayer2 && getPlayerNames(gameData).includes(playerName) && getPlayerNames(gameData).length < 2) {
+    setWaitingForPlayer2(true);
+  }
+  setIsLoaded(true); 
+}, [gameData])
 
   const initSocket = useCallback(() => {
     const s = new WebSocket("ws://localhost:4000/ws");//("ws://143.198.127.101:4000/ws");
@@ -78,6 +89,7 @@ const Webapp = () => {
           })
         );
       }
+      setWaitingForPlayer2(true)
     },
     [socket]
   );
@@ -115,17 +127,34 @@ const Webapp = () => {
           </div>
         )}
         {fetchError && <ErrorModal err={fetchError} />}
-        {!getPlayerNames(gameData).includes(playerName) && (
+        {loaded && !getPlayerNames(gameData).includes(playerName) && (
           <WhoAreUModal
             loaded={loaded}
             playerNames={getPlayerNames(gameData)}
             setPlayerName={onSubmitName}
           />
         )}
-        <Board socket={socket} playerName={playerName} gameData={gameData} ourStone={ourStone} setOurStone={setOurStone}/>
+        {getPlayerNames(gameData).includes(playerName) &&
+          getPlayerNames(gameData).length == 1 && <Waiting />}
+        <Board
+          socket={socket}
+          playerName={playerName}
+          gameData={gameData}
+          ourStone={ourStone}
+          setOurStone={setOurStone}
+        />
       </header>
     </div>
   );
 };
+
+const Waiting = () =>       ( 
+  <div className="modal-container">
+              <div className="modal">
+                <div style={{ margin: "auto" }}>Waiting for partner...</div>
+              </div>
+            </div>
+  )
+
 
 export default Webapp;

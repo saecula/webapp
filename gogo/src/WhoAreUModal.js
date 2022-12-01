@@ -21,8 +21,7 @@ const WhoAreUModal = ({ loaded, playerNames, setPlayerName }) => {
     },
     [setPlayerName]
   );
-  
-  console.log("pnames", playerNames.length);
+
   return (
     <div className="modal-container">
       <div className="modal">
@@ -58,28 +57,33 @@ const WhoAreUModal = ({ loaded, playerNames, setPlayerName }) => {
                     type="text"
                     className="modal-input"
                     name={"newPlayer"}
-  
                   />
                 </div>
                 {playerNames.length < 1 && (
-                  <div>
-                    <input
-                      type="radio"
-                      id="black-radio"
-                      name="white"
-                      value="b"
-                    />
-                    <label for="black-radio">black</label>
-                    <input
-                      type="radio"
-                      id="white-radio"
-                      name="black"
-                      value="w"
-                    />
-                    <label for="white-radio">white</label>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div style={{ padding: "10px", margin: "auto" }}>
+                      {" "}
+                      color:
+                    </div>
+                    <label className="radio">
+                      <input
+                        type="radio"
+                        id="black-radio"
+                        name="color"
+                        value="b"
+                      />
+                    </label>
+                    <label className="radio">
+                      <input
+                        type="radio"
+                        id="white-radio"
+                        name="color"
+                        value="w"
+                      />
+                    </label>
                   </div>
                 )}
-                <input type="submit" style={{width: '200px', height: '50px', margin: '50px'}}/>
+                <input type="submit" className="submit-btn" />
               </form>
             )}
           </div>

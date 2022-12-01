@@ -147,7 +147,6 @@ export const validateNameInput = (e) => {
 };
 
 export const getColorInput = (e) => {
-  console.log("validate target", e.target[0], e.target[1].checked, e.target[2]);
   const color1 = e.target[1];
   const color2 = e.target[2];
   if (color1?.checked) {
