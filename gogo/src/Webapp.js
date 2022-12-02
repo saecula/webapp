@@ -19,6 +19,7 @@ const Webapp = () => {
   const [waitingForPlayer2, setWaitingForPlayer2] = useState(false)
 
   useEffect(() => {
+    console.log("oooo", process.env);
     initSocket();
     loadGameState();
     return disconnectSocket;
@@ -28,7 +29,7 @@ const Webapp = () => {
     const id = window.location?.pathname?.slice(1);
     try {
       const { data } = await axios.get(
-        "http://143.198.127.101:4000/",
+        "http://143.198.127.101:4000/",//"http://localhost:4000"
         id && { params: { id } }
       );
       setGameData(data);
@@ -51,7 +52,7 @@ const Webapp = () => {
 }, [gameData])
 
   const initSocket = useCallback(() => {
-    const s = new WebSocket("ws://143.198.127.101:4000/ws");
+    const s = new WebSocket("ws://143.198.127.101:4000/ws");//("ws://localhost:4000/ws");
     s.addEventListener("message", function ({ data }) {
       const parsedData = JSON.parse(data);
       console.log("got game data on socket:", parsedData);
@@ -119,7 +120,7 @@ const Webapp = () => {
                 <button
                   style={{ width: "200px", margin: "auto" }}
                   onClick={() =>
-                    axios.post("http://143.198.127.101:4000/newgame")
+                    axios.post("http://143.198.127.101:4000/newgame")//("http://localhost:4000/newgame")
                   }
                 >
                   new game

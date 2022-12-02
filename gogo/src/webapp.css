@@ -352,16 +352,17 @@ input[type="radio"] {
     color: currentColor;
     width: 2.15em;
     height: 2.15em;
-    border: 0.15em solid currentColor;
     border-radius: 50%;
       display: grid;
         place-content: center;
 }
 
 input[id="black-radio"] {
+  border: 0.15em solid white;
   background-color: black;
 }
 input[id="white-radio"] {
+  border: 0.15em solid black;
   background-color: white;
 }
 
