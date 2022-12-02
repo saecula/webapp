@@ -19,7 +19,7 @@ type Move string
 
 const (
 	isLocal = runtime.GOOS == "darwin"
-	allowedOrigin = "http://143.198.127.101:3000"
+	allowedOrigin = "http://143.198.127.101"
 
 	// moves:
 	// switch colors, only valid before first turn
