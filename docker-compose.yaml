@@ -9,6 +9,6 @@ services:
   client:
     build:
       dockerfile: Dockerfile
-      context: ./gogo
+      context: ./client
     ports:
-      - "3000:3000"
+      - "80:80"
